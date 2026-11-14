@@ -1,0 +1,18 @@
+LABBOOK — CURRENT SETUP
+=======================
+
+This folder contains the working source. Read README.md and STATUS.md.
+Do not copy an old ZIP over these files: that would overwrite current fixes.
+
+Server: cd server, npm install, configure .env, npm run dev
+Client: cd client, npm install, npm run dev
+
+Checks: server/npm test, server/npm run test:api, client/npm run build
+API tests use isolated test databases. Never run demo reset or seed against a
+real lab unless you intend to replace that lab's demo data and catalog.
+
+Administrator setup: cd server, npm run admin:create
+Sign in at /dashboard. Add labs from the administration screen.
+New lab owners set prices and change their password in Settings.
+
+Local source changes are not online until both projects are deployed.

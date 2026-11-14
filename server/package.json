@@ -1,0 +1,35 @@
+{
+  "name": "labbook-server",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "description": "LabBook \u00e2\u20ac\u201d booking platform for diagnostic labs",
+  "main": "api/index.js",
+  "scripts": {
+    "dev": "node --watch src/index.js",
+    "start": "node src/index.js",
+    "seed": "node src/seed/seed.js",
+    "backfill:seats": "node src/scripts/backfill-seats.js",
+    "set-password": "node src/scripts/set-password.js",
+    "demo-lab": "node src/scripts/demo-lab.js",
+    "demo-lab:reset": "node src/scripts/demo-lab.js --reset",
+    "lab:bill": "node src/scripts/mark-paid.js",
+    "remind": "node src/jobs/send-reminders.js",
+    "remind:dry": "node src/jobs/send-reminders.js --dry-run",
+    "remind:test": "node src/jobs/send-test-reminder.js",
+    "test": "node --test test/unit.mjs test/isolation.mjs test/deploy.mjs test/seats.mjs",
+    "test:api": "node --test test/api.mjs test/dashboard.mjs test/ratelimit.mjs test/slots.mjs test/improvements.mjs",
+    "admin:create": "node src/scripts/create-admin.js"
+  },
+  "dependencies": {
+    "bcryptjs": "2.4.3",
+    "cors": "2.8.5",
+    "dotenv": "16.4.5",
+    "express": "4.21.2",
+    "express-rate-limit": "7.4.1",
+    "jsonwebtoken": "9.0.2",
+    "mongoose": "8.9.5",
+    "node-cron": "3.0.3",
+    "zod": "3.24.1"
+  }
+}
