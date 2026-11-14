@@ -7,8 +7,12 @@ import CheckBookingPage from "./pages/CheckBookingPage.jsx";
 import DashboardPage from "./pages/DashboardPage.jsx";
 import PrivacyPolicy from "./pages/PrivacyPolicy.jsx";
 import Terms from "./pages/Terms.jsx";
+import OpdBookingPage from "./pages/OpdBookingPage.jsx";
+import RxPrint from "./pages/hms/RxPrint.jsx";
+import InvoicePrint from "./pages/hms/InvoicePrint.jsx";
 import "./styles.css";
 import "./dashboard.css";
+import "./hms.css";
 
 createRoot(document.getElementById("root")).render(
   <React.StrictMode>
@@ -20,7 +24,9 @@ createRoot(document.getElementById("root")).render(
 
         {/* The lab's own screens. Listed before /:slug so "dashboard" is
             not mistaken for a lab's address. */}
-        <Route path="/dashboard" element={<DashboardPage />} />
+        <Route path="/dashboard/*" element={<DashboardPage />} />
+        <Route path="/print/rx/:id" element={<RxPrint />} />
+        <Route path="/print/invoice/:id" element={<InvoicePrint />} />
 
         {/* Same reason these sit above /:slug — no lab gets the slug
             "privacy" or "terms". */}
@@ -30,6 +36,7 @@ createRoot(document.getElementById("root")).render(
         {/* Each lab gets its own address: /nandu */}
         <Route path="/:slug" element={<BookingPage />} />
         <Route path="/:slug/check" element={<CheckBookingPage />} />
+        <Route path="/:slug/appointment" element={<OpdBookingPage />} />
         <Route path="*" element={<Navigate to="/" replace />} />
       </Routes>
     </BrowserRouter>

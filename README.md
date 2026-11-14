@@ -1,3 +1,72 @@
+# Hospital Management System (with LabBook inside)
+
+Started from the LabBook source. A facility whose `kind` is `hospital` gets the
+hospital modules on top of the full lab booking product; a facility left as
+`lab` behaves exactly like LabBook.
+
+## Hospital modules (Phase 1)
+
+- **Patients and records** — one registration per patient with a UHID, medical
+  alerts, emergency contact, ABHA ID, and a record page showing every visit,
+  prescription and lab booking.
+- **Doctors** — specialty, fees (new and follow-up), OPD days, sessions, minutes
+  per patient, online booking on or off, and an optional login for the doctor.
+- **OPD appointments** — desk booking, walk-ins, a token per doctor per day,
+  check-in, no-show, cancel and restore. The database refuses two bookings for
+  the same doctor at the same time.
+- **Consultation** — vitals, complaints, findings, diagnosis, prescription,
+  advice, follow-up date and lab orders. Lab orders become a confirmed booking
+  in the lab's own queue. Printable prescription at `/print/rx/<id>`.
+- **Billing and invoices** — one bill can carry the consultation, lab tests
+  and hospital charges (dressing, injection, day-care bed). Per-line discount
+  and GST, part payments, cash/UPI/card/bank, and dues. Invoice numbers run
+  per financial year (`SUN/26-27/00042`) and are never reused. A visit or lab
+  booking can only be on one live bill. Only the owner can cancel a bill;
+  money already taken is recorded as a refund, and the visit and lab work go
+  back to waiting. Printable invoice at `/print/invoice/<id>`, with GSTIN and
+  amount in words. Collecting a consultation fee from the queue also makes a
+  bill, so every payment has an invoice.
+- **Charge list and invoice details** — the owner keeps the hospital's own
+  charges, GSTIN and invoice footer under Charges & invoice.
+- **Pharmacy and inventory** — medicine list (generic, form, GST, HSN, rack,
+  reorder level, Schedule H flag), stock by batch and expiry, supplier
+  purchase entries with free quantity, and a stock ledger of every unit in and
+  out. Sales go out first-expiry-first and never from an expired batch, at MRP
+  with GST worked out of the price. The counter can load a doctor's
+  prescription and the system matches each line to stock and suggests the
+  quantity (1-0-1 for 5 days is 10 tablets). Low stock, out of stock,
+  expiring in 3 months and expired-on-shelf are flagged. Stock corrections
+  need a reason. Cancelling a pharmacy bill puts the units back on the batch
+  they came from. Doctors see the pharmacy's medicine names while prescribing.
+- **Overview** — today's OPD, the waiting queue, new patients, money
+  collected and dues, lab load, a 7-day chart and each doctor's progress.
+- **Online booking for patients** at `/<slug>/appointment`.
+- **Roles** — owner sees everything; reception books, checks in, makes bills
+  and takes payments; a doctor sees only their own queue and writes
+  consultations, and never sees bills; lab staff see only the lab; the
+  pharmacist runs stock and sales and sees only pharmacy bills. Reception can
+  look up stock and sell, but not change stock.
+
+WhatsApp for OPD confirmations needs a Meta-approved template with six slots
+(hospital, doctor, date and time, token, reference, phone). Put its name in
+`WHATSAPP_OPD_CONFIRMATION_TEMPLATE`; until then nothing is sent.
+
+Not built yet: insurance/TPA claims, in-patient admissions and beds.
+
+## Trying the hospital locally
+
+```bash
+cd server
+npm run dev:db          # local MongoDB on port 27017, no install needed; leave it running
+npm run seed:hospital   # demo hospital at /sunrise with doctors, patients and a week of visits
+npm run dev             # API on http://localhost:4000
+```
+
+Then in `client`, `npm run dev` and open http://localhost:5173/dashboard.
+The demo logins are listed in `server/src/seed/seed-hospital.js`.
+
+---
+
 # LabBook
 
 A booking application for diagnostic labs. One installation serves many labs,

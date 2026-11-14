@@ -47,8 +47,8 @@ export default function LoginPage({ onLoggedIn }) {
   return (
     <div className="login-wrap">
       <form className="card login-card" onSubmit={submit} noValidate>
-        <h1>Lab sign in</h1>
-        <p className="muted small">Sign in to see your bookings.</p>
+        <h1>Sign in</h1>
+        <p className="muted small">Hospital and lab staff sign in here.</p>
 
         {error && (
           <div className="notice notice-bad" role="alert">

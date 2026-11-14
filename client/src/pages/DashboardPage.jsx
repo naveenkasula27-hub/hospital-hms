@@ -7,6 +7,7 @@ import SettingsPage from "./SettingsPage.jsx";
 import AdminPage from "./AdminPage.jsx";
 import PasswordForm from "../components/PasswordForm.jsx";
 import LoginPage from "./LoginPage.jsx";
+import HmsShell from "./hms/HmsShell.jsx";
 
 const TABS = [
   { key: "bookings", label: "Bookings" },
@@ -56,6 +57,10 @@ export default function DashboardPage() {
 
   if (!session) {
     return <LoginPage onLoggedIn={setSession} />;
+  }
+
+  if (session.lab?.kind === "hospital") {
+    return <HmsShell session={session} setSession={setSession} onSignOut={signOut} />;
   }
 
   const lab = session.lab;
