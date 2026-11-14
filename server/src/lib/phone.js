@@ -33,8 +33,11 @@ export function normalisePhone(input, country = "IN") {
 
   const cc = callingCode(country);
 
+  // An Indian mobile is exactly 10 digits, so 9123456780 is local even though it starts with 91.
+  const localIndianMobile = cc === "91" && /^[6-9]\d{9}$/.test(s);
+
   // Already carries the country code.
-  if (cc && s.startsWith(cc) && s.length > cc.length + 5) return s;
+  if (cc && !localIndianMobile && s.startsWith(cc) && s.length > cc.length + 5) return s;
 
   // Local form with a trunk zero: 09949070916 -> 9949070916
   if (s.startsWith("0")) s = s.replace(/^0+/, "");

@@ -42,6 +42,12 @@ const bookingSchema = new mongoose.Schema(
     estimatedTotal: { type: Number, default: null },
     currency: { type: String, default: "INR" },
 
+    // Set when a hospital doctor ordered these tests during a consultation.
+    patientRecord: { type: mongoose.Schema.Types.ObjectId, ref: "Patient", default: null },
+    appointment: { type: mongoose.Schema.Types.ObjectId, ref: "Appointment", default: null },
+    // The hospital bill these tests are on, once billed.
+    bill: { type: mongoose.Schema.Types.ObjectId, ref: "Bill", default: null },
+
     date: { type: String, default: "" },          // "2026-10-15", the lab's local date
     slot: { type: String, default: "" },          // slot label
 

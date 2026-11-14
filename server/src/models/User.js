@@ -12,7 +12,8 @@ const userSchema = new mongoose.Schema(
     email: { type: String, required: true, unique: true, lowercase: true, trim: true },
     passwordHash: { type: String, required: true },
     sessionVersion: { type: Number, default: 0 },
-    role: { type: String, enum: ["admin", "owner", "staff"], default: "owner" },
+    // "staff" works in the lab; "reception", "doctor" and "pharmacist" exist only in hospitals.
+    role: { type: String, enum: ["admin", "owner", "staff", "reception", "doctor", "pharmacist"], default: "owner" },
     active: { type: Boolean, default: true },
     lastLoginAt: { type: Date, default: null },
   },

@@ -18,6 +18,9 @@ const labSchema = new mongoose.Schema(
   {
     name: { type: String, required: true, trim: true },
     slug: { type: String, required: true, unique: true, lowercase: true, trim: true },
+
+    // "lab" is a standalone diagnostic centre; "hospital" also gets OPD, patients and doctors.
+    kind: { type: String, enum: ["lab", "hospital"], default: "lab" },
     tagline: { type: String, default: "" },
     about: { type: String, default: "" },
 
@@ -66,6 +69,14 @@ const labSchema = new mongoose.Schema(
        */
       cta: { type: String, default: "" },
     },
+    // Printed on patient invoices. Consultations and lab tests are GST-exempt in
+    // India, so a GSTIN is only needed once the hospital bills taxable items.
+    invoice: {
+      legalName: { type: String, default: "" },
+      gstin: { type: String, default: "" },
+      footer: { type: String, default: "" },
+    },
+
     logoUrl: { type: String, default: "" },
     photos: { type: [String], default: [] },
 

@@ -12,6 +12,10 @@ import assert from "node:assert/strict";
 import { normalisePhone, looksLikeMobile, callingCode, maskPhone } from "../src/lib/phone.js";
 import { todayInZone, dateInZone, addDays, isValidDateStr, prettyDate } from "../src/lib/dates.js";
 import { makeReference } from "../src/lib/reference.js";
+import {
+  lineTotals, billTotals, paidSoFar, billStatus, invoiceYear, formatInvoiceNumber, round2, isExpired, expiresWithin, pickBatches,
+} from "../src/lib/invoice.js";
+import { matchMedicine, suggestQty } from "../src/services/pharmacy.js";
 import { CATALOG, PACKAGE_TEMPLATES, CATEGORY_ORDER } from "../src/seed/catalog.js";
 
 test("phone — Indian numbers", () => {
@@ -21,6 +25,12 @@ test("phone — Indian numbers", () => {
   assert.equal(normalisePhone("99490 70916", "IN"), "919949070916");
   assert.equal(normalisePhone("+91 99490 70916", "IN"), "919949070916");
   assert.equal(normalisePhone("919949070916", "IN"), "919949070916");
+});
+
+test("phone — a 10-digit Indian mobile starting with 91 is still local", () => {
+  assert.equal(normalisePhone("9123456780", "IN"), "919123456780");
+  assert.equal(normalisePhone("919123456780", "IN"), "919123456780");
+  assert.equal(normalisePhone("+91 91234 56780", "IN"), "919123456780");
 });
 
 test("phone — rejects nonsense", () => {
@@ -117,6 +127,92 @@ test("reference — no letters that get misheard", () => {
   for (const bad of ["0", "O", "1", "I", "L"]) {
     assert.ok(!joined.includes(bad), `reference contains ${bad}, which is easy to mishear`);
   }
+});
+
+test("invoice — a line takes the discount off before tax", () => {
+  assert.deepEqual(lineTotals({ qty: 2, rate: 500, discount: 100, taxPct: 18 }), {
+    gross: 1000, discount: 100, taxable: 900, tax: 162, amount: 1062,
+  });
+  // A discount bigger than the line cannot push it below zero.
+  assert.equal(lineTotals({ qty: 1, rate: 200, discount: 500 }).amount, 0);
+  assert.equal(lineTotals({ qty: 1, rate: 200, discount: -50 }).amount, 200);
+});
+
+test("invoice — totals add the rounded lines, so the paper adds up", () => {
+  const t = billTotals([
+    { qty: 1, rate: 333.33, taxPct: 5 },
+    { qty: 3, rate: 0.1 },
+    { qty: 1, rate: 500, discount: 50 },
+  ]);
+  assert.equal(t.subtotal, 833.63);
+  assert.equal(t.discount, 50);
+  assert.equal(t.tax, 16.67);
+  assert.equal(t.total, round2(t.items.reduce((s, l) => s + l.amount, 0)));
+  assert.equal(t.total, 800.3);
+});
+
+test("invoice — payments, refunds and status", () => {
+  assert.equal(paidSoFar([{ amount: 300 }, { amount: 200 }, { kind: "refund", amount: 100 }]), 400);
+  assert.equal(billStatus(1000, 0), "unpaid");
+  assert.equal(billStatus(1000, 400), "partial");
+  assert.equal(billStatus(1000, 1000), "paid");
+  assert.equal(billStatus(0, 0), "paid");           // fully discounted
+  assert.equal(billStatus(1000, 1000, true), "cancelled");
+});
+
+test("invoice — numbering follows India's April-to-March year", () => {
+  assert.equal(invoiceYear("2026-11-14", "IN"), "26-27");
+  assert.equal(invoiceYear("2027-03-31", "IN"), "26-27");
+  assert.equal(invoiceYear("2027-04-01", "IN"), "27-28");
+  assert.equal(invoiceYear("2026-11-14", "AE"), "2026");
+  assert.equal(formatInvoiceNumber("sunrise", "26-27", 42), "SUN/26-27/00042");
+  assert.equal(formatInvoiceNumber("", "2026", 1), "INV/2026/00001");
+});
+
+test("invoice — MRP already includes GST, so the patient pays the MRP", () => {
+  const l = lineTotals({ qty: 10, rate: 2.2, taxPct: 12, taxInclusive: true });
+  assert.equal(l.amount, 22);
+  assert.equal(l.taxable, 19.64);
+  assert.equal(l.tax, 2.36);
+  const d = lineTotals({ qty: 10, rate: 2.2, discount: 2.2, taxPct: 12, taxInclusive: true });
+  assert.equal(d.amount, 19.8);
+  assert.equal(round2(d.taxable + d.tax), 19.8);
+});
+
+test("pharmacy — expiry is good to the end of the month", () => {
+  assert.ok(!isExpired("2026-11", "2026-11-30"));
+  assert.ok(isExpired("2026-10", "2026-11-01"));
+  assert.ok(expiresWithin("2027-02", "2026-11-14", 3));
+  assert.ok(!expiresWithin("2027-03", "2026-11-14", 3));
+  assert.ok(!expiresWithin("2026-10", "2026-11-14", 3));   // already expired, not "expiring"
+});
+
+test("pharmacy — first expiry first out, skipping expired and empty batches", () => {
+  const batches = [
+    { batchNo: "LATE", expiry: "2028-01", qty: 100 },
+    { batchNo: "OLD", expiry: "2026-09", qty: 50 },     // expired
+    { batchNo: "SOON", expiry: "2027-01", qty: 8 },
+    { batchNo: "EMPTY", expiry: "2026-12", qty: 0 },
+  ];
+  const picks = pickBatches(batches, 20, "2026-11-14");
+  assert.deepEqual(picks.map((p) => [p.batch.batchNo, p.qty]), [["SOON", 8], ["LATE", 12]]);
+  assert.equal(pickBatches(batches, 109, "2026-11-14"), null);   // only 108 usable
+});
+
+test("pharmacy — reading the doctor's prescription", () => {
+  const stock = [
+    { name: "Paracetamol 500 mg", generic: "Paracetamol", inStock: 10 },
+    { name: "Paracetamol 650 mg", generic: "Paracetamol", inStock: 600 },
+    { name: "Amoxicillin 500 mg", generic: "Amoxicillin", inStock: 0 },
+  ];
+  assert.equal(matchMedicine("Paracetamol 650 mg", stock).name, "Paracetamol 650 mg");
+  assert.equal(matchMedicine("PARACETAMOL 650MG tab", stock).name, "Paracetamol 650 mg");
+  assert.equal(matchMedicine("Amoxicillin 500 mg", stock).name, "Amoxicillin 500 mg");
+  assert.equal(matchMedicine("Dolo", stock), null);
+  assert.equal(suggestQty("1-0-1", "5 days", "Tablet"), 10);
+  assert.equal(suggestQty("1-1-1", "1 week", "Capsule"), 21);
+  assert.equal(suggestQty("1-0-1", "5 days", "Syrup"), 1);
+  assert.equal(suggestQty("As needed", "3 days", "Tablet"), 1);
 });
 
 test("catalog — no duplicate test codes", () => {

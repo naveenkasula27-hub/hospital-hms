@@ -10,6 +10,16 @@ import { dashboardCatalogRouter } from "./routes/dashboard-catalog.js";
 import { reportsRouter } from "./routes/reports.js";
 import { adminRouter } from "./routes/admin.js";
 import { cronRouter } from "./routes/cron.js";
+import { publicOpdRouter } from "./routes/public-opd.js";
+import { hmsOverviewRouter } from "./routes/hms-overview.js";
+import { hmsPatientsRouter } from "./routes/hms-patients.js";
+import { hmsDoctorsRouter } from "./routes/hms-doctors.js";
+import { hmsAppointmentsRouter } from "./routes/hms-appointments.js";
+import { hmsBillingRouter } from "./routes/hms-billing.js";
+import { hmsPharmacyRouter } from "./routes/hms-pharmacy.js";
+import { hmsInsuranceRouter } from "./routes/hms-insurance.js";
+import { hmsInpatientRouter } from "./routes/hms-inpatient.js";
+import { allowRoles } from "./middleware/auth.js";
 
 /**
  * Decides which websites may call this API.
@@ -59,12 +69,28 @@ export function createApp() {
     res.json({ ok: true, env: config.env, whatsapp: config.whatsapp.enabled });
   });
 
+  app.use("/api/public", publicOpdRouter);
   app.use("/api/public", publicRouter);
   app.use("/api/auth", authRouter);
-  app.use("/api/dashboard/bookings", dashboardBookingsRouter);
-  app.use("/api/dashboard/catalog", dashboardCatalogRouter);
+  app.use("/api/dashboard/bookings", allowRoles("owner", "staff", "reception"), dashboardBookingsRouter);
+  // Doctors may read the test list to order labs, and nothing else here.
+  app.use("/api/dashboard/catalog", allowRoles("owner", "staff", "doctor"), (req, res, next) => {
+    if (req.user.role === "doctor" && !(req.method === "GET" && req.path === "/tests")) {
+      return res.status(403).json({ error: "Your account does not have access to this section." });
+    }
+    next();
+  }, dashboardCatalogRouter);
   app.use("/api/cron", cronRouter);
+  app.use("/api/reports/dashboard", allowRoles("owner", "staff", "reception"));
   app.use("/api/reports", reportsRouter);
+  app.use("/api/hms/overview", hmsOverviewRouter);
+  app.use("/api/hms/patients", hmsPatientsRouter);
+  app.use("/api/hms/doctors", hmsDoctorsRouter);
+  app.use("/api/hms/appointments", hmsAppointmentsRouter);
+  app.use("/api/hms/billing", hmsBillingRouter);
+  app.use("/api/hms/pharmacy", hmsPharmacyRouter);
+  app.use("/api/hms/insurance", hmsInsuranceRouter);
+  app.use("/api/hms/ipd", hmsInpatientRouter);
   app.use("/api/admin", adminRouter);
 
   app.use((req, res) => res.status(404).json({ error: "Not found." }));

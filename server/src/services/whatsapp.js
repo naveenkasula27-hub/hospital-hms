@@ -231,3 +231,26 @@ export async function reportReady(lab, booking) {
     param(lab.phone),
   ]);
 }
+
+/**
+ * OPD appointment confirmation. Needs its own Meta-approved template with six
+ * slots: {{1}} hospital, {{2}} doctor, {{3}} date and time, {{4}} token,
+ * {{5}} reference, {{6}} hospital phone. Until the template name is set in the
+ * environment nothing is sent, because Meta rejects unapproved templates.
+ */
+export const OPD_CONFIRMATION_TEMPLATE = process.env.WHATSAPP_OPD_CONFIRMATION_TEMPLATE || "";
+
+export async function confirmOpdAppointment(lab, appt, patient, doctor) {
+  if (!OPD_CONFIRMATION_TEMPLATE || lab.isDemo) {
+    console.log(`[whatsapp skipped — no OPD template] ${appt.reference} for ${patient.name}`);
+    return { skipped: true };
+  }
+  return sendTemplate(patient.phone, OPD_CONFIRMATION_TEMPLATE, TEMPLATE_LANG, [
+    param(lab.name),
+    param(`${doctor.name} (${doctor.specialty})`),
+    param(`${prettyDate(appt.date)}, ${appt.time || "walk-in"}`),
+    param(appt.token),
+    param(appt.reference),
+    param(lab.phone),
+  ]);
+}

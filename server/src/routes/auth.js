@@ -9,6 +9,7 @@ import { sharedLimit } from "../middleware/rate-limit.js";
 import { z } from "zod";
 import { User } from "../models/User.js";
 import { Lab } from "../models/Lab.js";
+import { Doctor } from "../models/Doctor.js";
 import { signToken } from "../lib/jwt.js";
 import { requireAuth } from "../middleware/auth.js";
 import { billingStatus } from "../lib/billing.js";
@@ -47,24 +48,28 @@ authRouter.post("/login", loginLimiter, async (req, res) => {
 
   await User.updateOne({ _id: user._id }, { $set: { lastLoginAt: new Date() } });
 
-    res.json({
-    token: signToken(user),
-    user: { name: user.name, email: user.email, role: user.role },
-    lab: lab
-      ? { name: lab.name, slug: lab.slug, currency: lab.currency, locale: lab.locale, timezone: lab.timezone, billing: billingStatus(lab) }
-      : null,
-  });
+  res.json({ token: signToken(user), ...(await sessionInfo(user, lab)) });
 });
+
+async function sessionInfo(user, lab) {
+  const doctor = user.role === "doctor" && lab
+    ? await Doctor.findOne({ lab: lab._id, user: user._id }).select("name specialty").lean()
+    : null;
+  return {
+    user: { name: user.name, email: user.email, role: user.role, doctor },
+    lab: lab
+      ? {
+          name: lab.name, slug: lab.slug, kind: lab.kind || "lab", currency: lab.currency, locale: lab.locale,
+          timezone: lab.timezone, phone: lab.phone, address: lab.address, city: lab.city, billing: billingStatus(lab),
+        }
+      : null,
+  };
+}
 
 /** Lets the dashboard check on load whether a stored token is still good. */
 authRouter.get("/me", requireAuth, async (req, res) => {
   const lab = req.labId ? await Lab.findById(req.labId).lean() : null;
-  res.json({
-    user: { name: req.user.name, email: req.user.email, role: req.user.role },
-        lab: lab
-      ? { name: lab.name, slug: lab.slug, currency: lab.currency, locale: lab.locale, timezone: lab.timezone, billing: billingStatus(lab) }
-      : null,
-  });
+  res.json(await sessionInfo(req.user, lab));
 });
 
 const passwordSchema = z.object({ currentPassword: z.string().min(1).max(128), newPassword: z.string().min(12).max(128).refine(v => Buffer.byteLength(v, "utf8") <= 72, "Password must be at most 72 UTF-8 bytes.") });
