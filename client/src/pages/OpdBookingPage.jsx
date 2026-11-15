@@ -120,6 +120,7 @@ export default function OpdBookingPage() {
               <h1>{h.name}</h1>
               <p>{h.tagline || [h.address, h.city].filter(Boolean).join(", ")}</p>
             </div>
+            <Link to={`/${slug}`} className="opd-switch">Need a lab test instead?</Link>
           </div>
           <h2 className="opd-title">Book a doctor's appointment</h2>
           <p className="opd-lead">Pick a doctor and a time. You get a token number straight away.</p>

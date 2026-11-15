@@ -258,6 +258,7 @@ export default function BookingPage() {
                 Directions
               </a>
             )}
+            {lab.kind === "hospital" && <Link to={`/${slug}/appointment`}>Book a doctor</Link>}
             <Link to={`/${slug}/check`}>Check a booking</Link>
           </div>
         </div>

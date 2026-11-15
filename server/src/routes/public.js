@@ -31,6 +31,7 @@ async function loadLab(req, res, next) {
 const publicLab = (lab) => ({
   name: lab.name,
   slug: lab.slug,
+  kind: lab.kind,
   tagline: lab.tagline,
   about: lab.about,
   isDemo: Boolean(lab.isDemo),

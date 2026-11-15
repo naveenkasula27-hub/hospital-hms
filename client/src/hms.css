@@ -409,6 +409,11 @@ a.bed-card:hover { box-shadow: 0 4px 16px rgba(15, 23, 42, 0.1); transform: tran
 .opd-brand .brand-mark { background: rgba(255, 255, 255, 0.18); }
 .opd-brand h1 { font-size: 1.05rem; margin: 0; color: #fff; }
 .opd-brand p { margin: 0; font-size: 0.85rem; opacity: 0.85; }
+.opd-switch {
+  margin-left: auto; color: #fff; font-size: 0.82rem; font-weight: 600; text-decoration: none;
+  padding: 7px 12px; border-radius: 999px; background: rgba(255, 255, 255, 0.18); white-space: nowrap;
+}
+.opd-switch:hover { background: rgba(255, 255, 255, 0.28); }
 .opd-title { color: #fff; font-size: 1.6rem; margin: 26px 0 4px; }
 .opd-lead { margin: 0; opacity: 0.9; }
 .opd-main { max-width: 760px; margin-top: -36px; padding-bottom: 40px; }
