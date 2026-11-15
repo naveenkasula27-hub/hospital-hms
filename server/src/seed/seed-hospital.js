@@ -31,8 +31,8 @@ import { makeReference } from "../lib/reference.js";
 import { todayInZone, addDays } from "../lib/dates.js";
 
 const HOSPITAL = {
-  name: "Sunrise Multispeciality Hospital",
-  slug: "sunrise",
+  name: "NP Hospital",
+  slug: "np",
   kind: "hospital",
   isDemo: true,
   tagline: "OPD, diagnostics and pharmacy under one roof",
@@ -41,14 +41,14 @@ const HOSPITAL = {
   address: "Plot 12, Main Road, Siddipet, Telangana",
   city: "Siddipet",
   theme: { primary: "#0f766e", accent: "#0ea5e9", cta: "" },
-  invoice: { legalName: "", gstin: "", footer: "Thank you for choosing Sunrise. Keep this invoice for your records." },
+  invoice: { legalName: "", gstin: "", footer: "Thank you for choosing NP Hospital. Keep this invoice for your records." },
 };
 
 export const DEMO_LOGINS = [
-  { role: "owner", name: "Ravi Teja", email: "owner@sunrise.test", password: "sunrise-owner-2026" },
-  { role: "reception", name: "Front Desk", email: "reception@sunrise.test", password: "sunrise-desk-2026" },
-  { role: "staff", name: "Lab Technician", email: "lab@sunrise.test", password: "sunrise-lab-2026" },
-  { role: "pharmacist", name: "Pharmacy Counter", email: "pharmacy@sunrise.test", password: "sunrise-pharmacy-2026" },
+  { role: "owner", name: "Ravi Teja", email: "owner@np.test", password: "np-owner-2026" },
+  { role: "reception", name: "Front Desk", email: "reception@np.test", password: "np-desk-2026" },
+  { role: "staff", name: "Lab Technician", email: "lab@np.test", password: "np-lab-2026" },
+  { role: "pharmacist", name: "Pharmacy Counter", email: "pharmacy@np.test", password: "np-pharmacy-2026" },
 ];
 
 // [name, generic, form, unit, gst%, cost per unit, MRP per unit, reorder at, rack, units in stock]
@@ -80,7 +80,7 @@ const MEDICINES = [
 ];
 
 const DOCTORS = [
-  { name: "Dr. Ananya Rao", specialty: "General Medicine", qualification: "MBBS, MD (Medicine)", regNo: "TSMC 41822", room: "OPD 1", consultFee: 500, followUpFee: 300, days: [1, 2, 3, 4, 5, 6], sessions: [{ start: "09:00", end: "13:00" }, { start: "17:00", end: "20:00" }], login: { email: "dr.ananya@sunrise.test", password: "sunrise-doctor-2026" } },
+  { name: "Dr. Ananya Rao", specialty: "General Medicine", qualification: "MBBS, MD (Medicine)", regNo: "TSMC 41822", room: "OPD 1", consultFee: 500, followUpFee: 300, days: [1, 2, 3, 4, 5, 6], sessions: [{ start: "09:00", end: "13:00" }, { start: "17:00", end: "20:00" }], login: { email: "dr.ananya@np.test", password: "np-doctor-2026" } },
   { name: "Dr. Kiran Reddy", specialty: "Paediatrics", qualification: "MBBS, DCH", regNo: "TSMC 38410", room: "OPD 2", consultFee: 400, followUpFee: 250, days: [1, 2, 3, 4, 5, 6], sessions: [{ start: "10:00", end: "14:00" }] },
   { name: "Dr. Sravani Goud", specialty: "Obstetrics & Gynaecology", qualification: "MBBS, MS (OBG)", regNo: "TSMC 45231", room: "OPD 3", consultFee: 600, followUpFee: 350, days: [1, 3, 5, 6], sessions: [{ start: "10:00", end: "13:00" }] },
   { name: "Dr. Mohammed Arif", specialty: "Orthopaedics", qualification: "MBBS, MS (Ortho)", regNo: "TSMC 39907", room: "OPD 4", consultFee: 600, followUpFee: 400, days: [2, 4, 6], sessions: [{ start: "16:00", end: "19:00" }] },
@@ -351,8 +351,23 @@ async function seedInpatient(lab, today, patients, doctors) {
   console.log(`In-patient: ${wards.length} wards, ${beds.length} beds, ${made} admissions`);
 }
 
+/** The demo used to be called "sunrise", which is another hospital's brand. Removes it so no trace stays in the database. */
+async function removeLegacyDemo() {
+  const old = await Lab.findOne({ slug: "sunrise" });
+  if (!old) return;
+  const byLab = { lab: old._id };
+  await Promise.all([
+    Doctor, Patient, Appointment, Booking, User, Bill, Service, Medicine, StockBatch, StockMove,
+    Purchase, Insurer, Policy, Claim, Ward, Bed, Admission, Test, Package,
+  ].map((M) => M.deleteMany(byLab)));
+  await Counter.deleteMany({ _id: { $regex: `^${old._id}:` } });
+  await Lab.deleteOne({ _id: old._id });
+  console.log("Removed the old 'sunrise' demo hospital");
+}
+
 async function run() {
   await connectDb();
+  await removeLegacyDemo();
 
   const lab = await Lab.findOneAndUpdate({ slug: HOSPITAL.slug }, { $set: HOSPITAL }, { upsert: true, new: true, setDefaultsOnInsert: true });
   const today = todayInZone(lab.timezone);

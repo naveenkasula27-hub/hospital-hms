@@ -20,7 +20,7 @@ hospital modules on top of the full lab booking product; a facility left as
 - **Billing and invoices** — one bill can carry the consultation, lab tests
   and hospital charges (dressing, injection, day-care bed). Per-line discount
   and GST, part payments, cash/UPI/card/bank, and dues. Invoice numbers run
-  per financial year (`SUN/26-27/00042`) and are never reused. A visit or lab
+  per financial year (`NP/26-27/00042`) and are never reused. A visit or lab
   booking can only be on one live bill. Only the owner can cancel a bill;
   money already taken is recorded as a refund, and the visit and lab work go
   back to waiting. Printable invoice at `/print/invoice/<id>`, with GSTIN and
@@ -58,7 +58,7 @@ Not built yet: insurance/TPA claims, in-patient admissions and beds.
 ```bash
 cd server
 npm run dev:db          # local MongoDB on port 27017, no install needed; leave it running
-npm run seed:hospital   # demo hospital at /sunrise with doctors, patients and a week of visits
+npm run seed:hospital   # demo hospital at /np with doctors, patients and a week of visits
 npm run dev             # API on http://localhost:4000
 ```
 

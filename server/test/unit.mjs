@@ -165,7 +165,7 @@ test("invoice — numbering follows India's April-to-March year", () => {
   assert.equal(invoiceYear("2027-03-31", "IN"), "26-27");
   assert.equal(invoiceYear("2027-04-01", "IN"), "27-28");
   assert.equal(invoiceYear("2026-11-14", "AE"), "2026");
-  assert.equal(formatInvoiceNumber("sunrise", "26-27", 42), "SUN/26-27/00042");
+  assert.equal(formatInvoiceNumber("np", "26-27", 42), "NP/26-27/00042");
   assert.equal(formatInvoiceNumber("", "2026", 1), "INV/2026/00001");
 });
 
