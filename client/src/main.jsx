@@ -14,13 +14,18 @@ import "./styles.css";
 import "./dashboard.css";
 import "./hms.css";
 
+// A single-hospital deployment sets VITE_DEFAULT_SLUG so the bare address
+// lands straight on that hospital's booking page, instead of the generic
+// marketing page meant for selling this product to new hospitals.
+const defaultSlug = import.meta.env.VITE_DEFAULT_SLUG || "";
+
 createRoot(document.getElementById("root")).render(
   <React.StrictMode>
     <BrowserRouter>
       <Routes>
-        {/* The front door. Used to redirect to /nandu, which meant anyone
-            opening the bare address landed on a real lab's booking page. */}
-        <Route path="/" element={<LandingPage />} />
+        {/* The front door. On a shared/demo deployment this is the generic
+            marketing page; a single-hospital deployment redirects instead. */}
+        <Route path="/" element={defaultSlug ? <Navigate to={`/${defaultSlug}`} replace /> : <LandingPage />} />
 
         {/* The lab's own screens. Listed before /:slug so "dashboard" is
             not mistaken for a lab's address. */}
