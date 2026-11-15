@@ -50,8 +50,7 @@ export default function ClaimNew() {
   const selectedBill = bills.find((b) => b._id === billId);
   const selectedPolicy = policies.find((p) => p._id === policyId);
 
-  async function submit(e) {
-    e.preventDefault();
+  async function submit() {
     setBusy(true); setError("");
     try {
       const { claim } = await createClaim({
@@ -68,7 +67,7 @@ export default function ClaimNew() {
         <Icon name="arrowLeft" size={15} /> Insurance claims
       </Link>
 
-      <form className="panel" onSubmit={submit} style={{ maxWidth: 720 }}>
+      <div className="panel" style={{ maxWidth: 720 }}>
         <h2>Patient</h2>
         <PatientPicker patient={patient} onPick={setPatient} formId="claim-patient" />
 
@@ -129,12 +128,12 @@ export default function ClaimNew() {
             </div>
 
             {error && <div className="notice notice-bad">{error}</div>}
-            <button type="submit" className="btn btn-primary" disabled={busy || !policyId || !billId || !(Number(claimedAmount) > 0)}>
+            <button type="button" className="btn btn-primary" onClick={submit} disabled={busy || !policyId || !billId || !(Number(claimedAmount) > 0)}>
               {busy ? "Creating…" : "Create claim"}
             </button>
           </>
         )}
-      </form>
+      </div>
     </>
   );
 }

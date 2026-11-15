@@ -45,8 +45,7 @@ export default function AdmitPatient() {
 
   const set = (k) => (e) => setForm((f) => ({ ...f, [k]: e.target.value }));
 
-  async function submit(e) {
-    e.preventDefault();
+  async function submit() {
     setBusy(true);
     setError("");
     try {
@@ -74,7 +73,7 @@ export default function AdmitPatient() {
     <>
       <Link to="/dashboard/ipd" className="small back-link"><Icon name="arrowLeft" size={15} /> Bed map</Link>
 
-      <form className="panel form-panel" onSubmit={submit} style={{ maxWidth: 700 }}>
+      <div className="panel form-panel" style={{ maxWidth: 700 }}>
         {error && <div className="notice notice-bad">{error}</div>}
 
         <fieldset>
@@ -147,12 +146,12 @@ export default function AdmitPatient() {
         </fieldset>
 
         <div style={{ display: "flex", gap: 10 }}>
-          <button type="submit" className="btn btn-primary" disabled={busy || !patient || !form.bed || !form.doctor}>
+          <button type="button" className="btn btn-primary" onClick={submit} disabled={busy || !patient || !form.bed || !form.doctor}>
             {busy ? "Admitting…" : "Admit patient"}
           </button>
           <button type="button" className="btn btn-quiet" onClick={() => navigate("/dashboard/ipd")}>Cancel</button>
         </div>
-      </form>
+      </div>
     </>
   );
 }
