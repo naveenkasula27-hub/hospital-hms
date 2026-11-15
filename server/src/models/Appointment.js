@@ -38,6 +38,9 @@ const appointmentSchema = new mongoose.Schema(
     source: { type: String, enum: ["desk", "web", "phone"], default: "desk" },
     reason: { type: String, default: "", trim: true },
 
+    // Set once the day-before WhatsApp reminder has gone out, so it is never sent twice.
+    reminderSent: { type: Boolean, default: false },
+
     status: { type: String, enum: APPOINTMENT_STATUSES, default: "booked", index: true },
     statusLog: {
       type: [

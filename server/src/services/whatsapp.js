@@ -238,19 +238,51 @@ export async function reportReady(lab, booking) {
  * {{5}} reference, {{6}} hospital phone. Until the template name is set in the
  * environment nothing is sent, because Meta rejects unapproved templates.
  */
-export const OPD_CONFIRMATION_TEMPLATE = process.env.WHATSAPP_OPD_CONFIRMATION_TEMPLATE || "";
+export const OPD_CONFIRMATION_TEMPLATE =
+  process.env.WHATSAPP_OPD_CONFIRMATION_TEMPLATE || "opd_appointment_confirmation";
+
+/** "13:05" -> "1:05 PM". An empty time is a walk-in. */
+function time12(hhmm) {
+  const m = /^(\d{1,2}):(\d{2})$/.exec(hhmm || "");
+  if (!m) return "walk-in";
+  const h = Number(m[1]);
+  return `${((h + 11) % 12) + 1}:${m[2]} ${h < 12 ? "AM" : "PM"}`;
+}
+
+const whenOf = (appt) => `${prettyDate(appt.date)}, ${time12(appt.time)}`;
+const doctorOf = (doctor) => `${doctor.name} (${doctor.specialty})`;
 
 export async function confirmOpdAppointment(lab, appt, patient, doctor) {
-  if (!OPD_CONFIRMATION_TEMPLATE || lab.isDemo) {
-    console.log(`[whatsapp skipped — no OPD template] ${appt.reference} for ${patient.name}`);
+  // A sample hospital never messages real phones.
+  if (lab.isDemo) {
+    console.log(`[whatsapp skipped — demo hospital] ${appt.reference} for ${patient.name}`);
     return { skipped: true };
   }
   return sendTemplate(patient.phone, OPD_CONFIRMATION_TEMPLATE, TEMPLATE_LANG, [
     param(lab.name),
-    param(`${doctor.name} (${doctor.specialty})`),
-    param(`${prettyDate(appt.date)}, ${appt.time || "walk-in"}`),
+    param(doctorOf(doctor)),
+    param(whenOf(appt)),
     param(appt.token),
     param(appt.reference),
+    param(lab.phone),
+  ]);
+}
+
+/**
+ * Day-before reminder for a doctor's appointment. Five slots: {{1}} hospital,
+ * {{2}} doctor, {{3}} date and time, {{4}} token, {{5}} hospital phone.
+ */
+export const OPD_REMINDER_TEMPLATE =
+  process.env.WHATSAPP_OPD_REMINDER_TEMPLATE || "opd_appointment_reminder";
+
+export async function remindOpdAppointment(lab, appt, patient, doctor) {
+  if (lab.isDemo) return { skipped: true };
+  if (lab.notify?.reminderDayBefore === false) return { skipped: true };
+  return sendTemplate(patient.phone, OPD_REMINDER_TEMPLATE, TEMPLATE_LANG, [
+    param(lab.name),
+    param(doctorOf(doctor)),
+    param(whenOf(appt)),
+    param(appt.token),
     param(lab.phone),
   ]);
 }

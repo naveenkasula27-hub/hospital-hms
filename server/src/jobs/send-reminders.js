@@ -16,7 +16,8 @@ import { Lab } from "../models/Lab.js";
 import { Booking } from "../models/Booking.js";
 import { Test } from "../models/Test.js";
 import { Package } from "../models/Package.js";
-import { remindPatient } from "../services/whatsapp.js";
+import { Appointment } from "../models/Appointment.js";
+import { remindPatient, remindOpdAppointment } from "../services/whatsapp.js";
 import { config } from "../config.js";
 
 const DRY_RUN = process.argv.includes("--dry-run");
@@ -87,6 +88,31 @@ async function run() {
         // the day's reminders. A failure on every booking usually means the
         // access token has expired or the template name/language is wrong.
         console.error(`Failed for ${booking.reference} (${lab.name}): ${err.message}`);
+      }
+    }
+
+    // Doctor appointments tomorrow.
+    const appointments = await Appointment.find({
+      lab: lab._id,
+      date: tomorrow,
+      status: "booked",
+      reminderSent: { $ne: true },
+    }).populate("patient").populate("doctor");
+
+    for (const appt of appointments) {
+      if (DRY_RUN) {
+        console.log(`[dry run] would remind ${appt.patient.name} (${appt.reference}) — doctor visit, ${lab.name}`);
+        continue;
+      }
+      try {
+        await remindOpdAppointment(lab, appt, appt.patient, appt.doctor);
+        appt.reminderSent = true;
+        await appt.save();
+        sent++;
+        console.log(`Reminded ${appt.patient.name} — ${appt.reference} (${lab.name})`);
+      } catch (err) {
+        failed++;
+        console.error(`Failed for ${appt.reference} (${lab.name}): ${err.message}`);
       }
     }
   }

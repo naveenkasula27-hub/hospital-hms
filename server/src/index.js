@@ -2,7 +2,7 @@ import express from "express";
 import cors from "cors";
 import { pathToFileURL } from "node:url";
 import { config } from "./config.js";
-import { connectDb } from "./db.js";
+import { connectDb, cachedConnect } from "./db.js";
 import { publicRouter } from "./routes/public.js";
 import { authRouter } from "./routes/auth.js";
 import { dashboardBookingsRouter } from "./routes/dashboard-bookings.js";
@@ -106,6 +106,24 @@ export function createApp() {
   });
 
   return app;
+}
+
+// What Vercel calls for each request: there is no long-running server there, so
+// connect to the database first (cached between calls), then use the same app.
+// Vercel's Express detection looks for this default export in this file.
+let serverlessApp;
+export default async function handler(req, res) {
+  try {
+    await cachedConnect();
+  } catch (err) {
+    console.error("Database connection failed:", err.message);
+    res.statusCode = 503;
+    res.setHeader("Content-Type", "application/json");
+    res.end(JSON.stringify({ error: "The system is temporarily unavailable. Please try again in a moment." }));
+    return;
+  }
+  serverlessApp ??= createApp();
+  return serverlessApp(req, res);
 }
 
 // Only start listening when run directly, so tests can import createApp().
