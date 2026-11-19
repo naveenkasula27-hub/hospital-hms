@@ -1,5 +1,6 @@
 import { money } from "../lib/api.js";
 import { useLang } from "../lib/i18n.jsx";
+import { packageImage } from "../lib/packagePhotos.js";
 
 export default function Packages({ packages, lab, byCode, picked, onToggle }) {
   const { t } = useLang();
@@ -14,6 +15,7 @@ export default function Packages({ packages, lab, byCode, picked, onToggle }) {
 
         return (
           <li className="pkg" key={p.code}>
+            <img className="pkg-photo" src={packageImage(p.code)} alt="" loading="lazy" />
             <div className="pkg-top">
               <h3>{p.name}</h3>
               {typeof p.price === "number" && <span className="pkg-price">{money(p.price, lab)}</span>}
