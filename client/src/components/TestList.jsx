@@ -3,6 +3,7 @@ import { money } from "../lib/api.js";
 import { useLang } from "../lib/i18n.jsx";
 import CategoryIcon from "../lib/categoryIcons.jsx";
 import CATEGORY_PHOTOS from "../lib/categoryPhotos.jsx";
+import TEST_ICONS from "../lib/testIcons.js";
 
 const norm = (s) => String(s || "").toLowerCase().replace(/[^a-z0-9 ]/g, " ");
 const PAGE_SIZE = 24;
@@ -94,7 +95,11 @@ export default function TestList({
               <li className="test-card" key={tst.code}>
                 <div className="test-card-top">
                   <span className="test-card-icon" aria-hidden="true">
-                    <CategoryIcon category={tst.category} size={20} />
+                    {TEST_ICONS[tst.category] ? (
+                      <img className="test-card-icon-img" src={TEST_ICONS[tst.category]} alt="" loading="lazy" />
+                    ) : (
+                      <CategoryIcon category={tst.category} size={20} />
+                    )}
                   </span>
                   <div className="test-card-body">
                     <h3>{tst.name}</h3>
