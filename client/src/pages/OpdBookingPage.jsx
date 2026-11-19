@@ -167,14 +167,20 @@ export default function OpdBookingPage() {
                 <ul className="opd-doctors">
                   {doctors.map((d) => (
                     <li key={d._id}>
-                      <button type="button" className="opd-doctor" aria-pressed={doctor?._id === d._id} onClick={() => pickDoctor(d)}>
-                        <span className="avatar">{initials(d.name)}</span>
-                        <span className="opd-doc-text">
-                          <strong>{d.name}</strong>
-                          <span>{d.specialty}{d.qualification ? ` · ${d.qualification}` : ""}</span>
-                          <span>{d.days.map((x) => DAY_SHORT[x]).join(", ")}</span>
+                      <button type="button" className="opd-doctor-card" aria-pressed={doctor?._id === d._id} onClick={() => pickDoctor(d)}>
+                        <span className="opd-doc-avatar">{initials(d.name)}</span>
+                        <strong className="opd-doc-name">{d.name}</strong>
+                        <span className="opd-doc-specialty">{d.specialty}</span>
+                        {d.qualification && <span className="opd-doc-qual">{d.qualification}</span>}
+                        <span className="opd-doc-days">{d.days.map((x) => DAY_SHORT[x]).join(", ")}</span>
+                        <span className="opd-doc-confirm">⚡ Instant confirmation</span>
+                        <span className="opd-doc-bottom">
+                          <span className="opd-doc-fee-block">
+                            <span className="opd-doc-fee-label">Consultation fee</span>
+                            <span className="opd-doc-fee">{money(d.consultFee, h)}</span>
+                          </span>
+                          <span className="opd-doc-cta">{doctor?._id === d._id ? "Selected ✓" : "Book appointment"}</span>
                         </span>
-                        <span className="opd-fee">{money(d.consultFee, h)}</span>
                       </button>
                     </li>
                   ))}
