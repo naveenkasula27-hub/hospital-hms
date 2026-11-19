@@ -3,6 +3,7 @@ import { createRoot } from "react-dom/client";
 import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 import LandingPage from "./pages/LandingPage.jsx";
 import BookingPage from "./pages/BookingPage.jsx";
+import AudiencePage from "./pages/AudiencePage.jsx";
 import CheckBookingPage from "./pages/CheckBookingPage.jsx";
 import DashboardPage from "./pages/DashboardPage.jsx";
 import PrivacyPolicy from "./pages/PrivacyPolicy.jsx";
@@ -41,6 +42,7 @@ createRoot(document.getElementById("root")).render(
         {/* Each lab gets its own address: /nandu */}
         <Route path="/:slug" element={<BookingPage />} />
         <Route path="/:slug/check" element={<CheckBookingPage />} />
+        <Route path="/:slug/for/:audience" element={<AudiencePage />} />
         <Route path="/:slug/appointment" element={<OpdBookingPage />} />
         <Route path="*" element={<Navigate to="/" replace />} />
       </Routes>

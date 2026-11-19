@@ -1,8 +1,14 @@
-/* The lab's own colours are set on :root at runtime from its theme. */
+/* A lab's own colours are set on :root at runtime from its theme, and
+   override everything below once one loads. These are only seen on the one
+   screen that comes before that — the sign-in page, with no lab picked yet
+   — so that's the one place that's actually "UnityWebWorks" rather than a
+   client's own brand, and it uses the UWW palette: Deep Navy and Cursor
+   Orange. --cta stays navy rather than orange here because white text on
+   orange is under the brand kit's own 3:1 minimum for bold button text. */
 :root {
-  --primary: #0f766e;
-  --accent: #0ea5e9;
-  --cta: #0f766e;   /* buttons; labs that want one action colour override it */
+  --primary: #14213D;
+  --accent: #FF6A1F;
+  --cta: #14213D;   /* buttons; labs that want one action colour override it */
 
   --ink: #0f172a;
   /* Three steps of grey, all comfortably readable on white. The faintest used
@@ -66,7 +72,7 @@ p { margin: 0 0 10px; }
 
 /* 1200px to match the bar at the bottom, which was already using that. On a
    wide screen 1040 left a band of empty page down both sides. */
-.wrap { max-width: 1200px; margin: 0 auto; padding: 0 var(--gutter); }
+.wrap { max-width: 1320px; margin: 0 auto; padding: 0 var(--gutter); }
 
 .muted { color: var(--ink-soft); }
 .small { font-size: 0.875rem; }
@@ -164,6 +170,137 @@ p { margin: 0 0 10px; }
 }
 .head-links a:hover { background: rgba(255, 255, 255, 0.26); }
 
+.head-nav {
+  display: flex; gap: 10px; flex-wrap: wrap;
+  margin-top: 14px; padding-top: 14px;
+  border-top: 1px solid rgba(255, 255, 255, 0.18);
+}
+.head-nav a {
+  color: #fff; text-decoration: none; font-size: 0.875rem; font-weight: 600;
+  background: rgba(255, 255, 255, 0.12);
+  padding: 8px 14px; border-radius: 999px;
+}
+.head-nav a:hover { background: rgba(255, 255, 255, 0.22); }
+
+/* ---------- Hero: search + the three things people open this page for ---------- */
+.hero { background: var(--primary); padding: 0 0 22px; }
+.hero-search-row {
+  display: flex;
+  gap: 8px;
+  align-items: stretch;
+}
+.hero-search {
+  flex: 1 1 auto;
+  min-width: 0;
+  padding: 13px 16px;
+  font-size: 1rem;
+  border: none;
+  border-radius: 12px;
+  background: #fff;
+  color: var(--ink);
+  box-shadow: 0 6px 16px rgba(0, 0, 0, 0.12);
+}
+.hero-search:focus-visible { outline: 2px solid #fff; outline-offset: 2px; }
+.hero-search-btn {
+  flex: 0 0 auto;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 0 16px;
+  border: none;
+  border-radius: 12px;
+  background: var(--ink);
+  color: #fff;
+  font-weight: 600;
+  font-size: 0.9375rem;
+  box-shadow: 0 6px 16px rgba(0, 0, 0, 0.12);
+  cursor: pointer;
+}
+.hero-search-btn:hover { background: #000; }
+.hero-search-btn:focus-visible { outline: 2px solid #fff; outline-offset: 2px; }
+@media (max-width: 480px) {
+  .hero-search-btn-label { display: none; }
+  .hero-search-btn { padding: 0 14px; }
+}
+
+.hero-actions {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 10px;
+  margin-top: 14px;
+}
+.hero-action {
+  display: flex; flex-direction: column; align-items: center; gap: 6px;
+  text-decoration: none; color: #fff;
+  background: rgba(255, 255, 255, 0.14);
+  border: 1px solid rgba(255, 255, 255, 0.22);
+  border-radius: 12px;
+  padding: 14px 8px;
+  font-size: 0.8125rem;
+  font-weight: 600;
+  text-align: center;
+}
+.hero-action:hover { background: rgba(255, 255, 255, 0.22); }
+.hero-action-badge {
+  width: 38px; height: 38px; border-radius: 999px;
+  display: flex; align-items: center; justify-content: center;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.18);
+}
+.hero-action-badge-call { background: var(--primary); }
+.hero-action-badge-whatsapp { background: #25d366; }
+.hero-action-badge-check { background: var(--accent); }
+
+/* ---------- About band: real description, real counts, no stock photos ---------- */
+.about-band { background: var(--bg); padding: 34px 0; border-bottom: 1px solid var(--line); }
+.about-band-inner {
+  display: flex; align-items: center; gap: 36px;
+}
+.about-band-text { flex: 1; min-width: 0; }
+.about-band-text h2 { margin: 0 0 10px; }
+.about-band-copy { margin: 0 0 16px; color: var(--ink-soft); max-width: 56ch; }
+.about-band-stats { display: flex; gap: 28px; margin-bottom: 18px; flex-wrap: wrap; }
+.about-band-stat { display: flex; flex-direction: column; }
+.about-band-stat strong { font-family: var(--font-head); font-size: 1.75rem; color: var(--primary); line-height: 1.1; }
+.about-band-stat span { color: var(--ink-faint); font-size: 0.8125rem; }
+.about-band-actions { display: flex; gap: 10px; flex-wrap: wrap; }
+.about-band-art { flex: none; color: var(--primary); display: flex; }
+@media (max-width: 760px) {
+  .about-band-inner { flex-direction: column-reverse; text-align: center; gap: 18px; }
+  .about-band-stats { justify-content: center; }
+  .about-band-actions { justify-content: center; }
+  .about-band-art svg { width: 150px; height: 150px; }
+}
+
+/* ---------- Need-help strip, above the footer ---------- */
+/* Floats at the bottom from the moment the page loads, same as the
+   reference — it's shown only while the booking bar isn't (picking a test
+   switches priority to "continue booking"), so the two never overlap. */
+.help-bar {
+  position: fixed; left: 0; right: 0; bottom: 0; z-index: 19;
+  background: var(--card); border-top: 1px solid var(--line);
+  padding: 14px 0; padding-bottom: calc(14px + env(safe-area-inset-bottom));
+  box-shadow: 0 -4px 18px rgba(15, 23, 42, 0.1);
+  animation: help-bar-drop-in 0.4s ease-out;
+}
+@keyframes help-bar-drop-in {
+  from { transform: translateY(100%); }
+  to { transform: translateY(0); }
+}
+.help-bar-inner {
+  display: flex; align-items: center; justify-content: space-between;
+  gap: 16px; flex-wrap: wrap;
+}
+.help-bar-title { margin: 0; font-weight: 700; font-size: 1.0625rem; }
+.help-bar-sub { margin: 2px 0 0; color: var(--ink-soft); font-size: 0.875rem; }
+.help-bar-actions { display: flex; gap: 10px; flex-wrap: wrap; align-items: center; }
+.help-bar-close {
+  display: flex; align-items: center; justify-content: center;
+  width: 32px; height: 32px; border-radius: 999px;
+  border: 1px solid var(--line); background: #fff; color: var(--ink-soft);
+  cursor: pointer; flex: none;
+}
+.help-bar-close:hover { background: var(--bg); color: var(--ink); }
+
 /* ---------- Layout ---------- */
 .cols { display: grid; gap: 18px; padding: 20px 0 110px; }
 
@@ -174,13 +311,23 @@ p { margin: 0 0 10px; }
 
 @media (min-width: 900px) {
   .cols { grid-template-columns: minmax(0, 1fr) 380px; align-items: start; }
-}
 
-/* The side column is NOT sticky. It holds the booking form, which is taller
-   than the screen, and a sticky element taller than the viewport pins its top
-   and never scrolls its bottom into view — so the Confirm button sat below the
-   fold with no way to reach it. The bar at the bottom of the screen is what
-   keeps the next step in front of people instead. */
+  /* The test grid (left) is usually much taller than the booking form
+     (right) — a short right column next to a long left one used to leave a
+     wall of blank space once you scrolled past it. Pinning the right column
+     fixes that, and `overflow-y: auto` with a capped height means that even
+     when the form itself is taller than the screen, it scrolls inside its
+     own box instead of running off the bottom with the Confirm button
+     unreachable — the problem a non-sticky column was originally there to
+     avoid. */
+  .side {
+    position: sticky;
+    top: 20px;
+    max-height: calc(100vh - 40px);
+    overflow-y: auto;
+    overscroll-behavior: contain;
+  }
+}
 
 .card {
   background: var(--card);
@@ -321,6 +468,7 @@ p { margin: 0 0 10px; }
 .btn-primary:hover:not(:disabled) { filter: brightness(1.08); }
 .btn-ghost { background: #fff; color: var(--primary); border-color: var(--line); }
 .btn-block { width: 100%; justify-content: center; }
+.btn-sm { padding: 6px 12px; font-size: 0.8125rem; }
 .btn:disabled { opacity: 0.6; cursor: progress; }
 .btn:focus-visible { outline: 2px solid var(--ink); outline-offset: 2px; }
 
@@ -364,7 +512,7 @@ p { margin: 0 0 10px; }
   box-shadow: 0 -4px 18px rgba(15, 23, 42, 0.22);
 }
 .bar-inner {
-  max-width: 1200px; margin: 0 auto; padding: 0 var(--gutter);
+  max-width: 1320px; margin: 0 auto; padding: 0 var(--gutter);
   display: flex; gap: 12px; align-items: center;
 }
 .bar .bar-text { flex: 1; font-size: 0.875rem; line-height: 1.3; }
@@ -395,4 +543,169 @@ p { margin: 0 0 10px; }
   .bar-go { animation: none; }
 }
 
-.site-foot { padding: 22px 0 36px; color: var(--ink-faint); font-size: 0.8125rem; text-align: center; }
+/* Extra bottom padding so the address/phone line doesn't end up hidden
+   under the floating help bar once you scroll all the way down. */
+.site-foot { padding: 22px 0 100px; color: var(--ink-faint); font-size: 0.8125rem; text-align: center; }
+
+/* ---------- Language toggle ---------- */
+.lang-toggle {
+  display: inline-flex; background: rgba(255, 255, 255, 0.14);
+  border-radius: 999px; padding: 3px; gap: 2px; flex: none;
+}
+.lang-btn {
+  cursor: pointer; border: 0; background: transparent; color: rgba(255, 255, 255, 0.85);
+  font-size: 0.8125rem; font-weight: 600; padding: 5px 12px; border-radius: 999px;
+  font-family: var(--font-head);
+}
+.lang-btn[aria-pressed="true"] { background: #fff; color: var(--primary); }
+
+/* ---------- Icon category chips ---------- */
+.icon-chips {
+  display: flex; gap: 16px; padding: 14px 2px 6px;
+  overflow-x: auto; min-width: 0; scrollbar-width: thin;
+  -webkit-overflow-scrolling: touch;
+}
+.icon-chip {
+  flex: none; display: flex; flex-direction: column; align-items: center; gap: 6px;
+  cursor: pointer; border: 0; background: transparent; width: 68px;
+}
+.icon-chip-circle {
+  width: 52px; height: 52px; border-radius: 50%;
+  background: var(--bg); border: 1px solid var(--line);
+  display: flex; align-items: center; justify-content: center;
+  color: var(--ink-faint); transition: background 0.15s, color 0.15s, border-color 0.15s;
+  overflow: hidden;
+}
+.icon-chip[aria-pressed="true"] .icon-chip-circle {
+  background: var(--primary); border-color: var(--primary); color: #fff;
+}
+.icon-chip-photo { width: 100%; height: 100%; object-fit: cover; display: block; }
+.icon-chip[aria-pressed="true"] .icon-chip-circle:has(.icon-chip-photo) {
+  /* A photo already reads clearly on its own, so selection shows as a ring
+     around it instead of tinting the image the lab's brand colour. */
+  background: var(--bg);
+  border-color: var(--primary);
+  box-shadow: 0 0 0 2px var(--primary);
+}
+.icon-chip-label {
+  font-size: 0.75rem; line-height: 1.2; color: var(--ink-soft); text-align: center;
+  overflow: hidden; text-overflow: ellipsis; white-space: nowrap; max-width: 68px;
+}
+.icon-chip[aria-pressed="true"] .icon-chip-label { color: var(--ink); font-weight: 600; }
+
+/* ---------- Test cards ---------- */
+/* A side-by-side grid instead of one long stacked column — on a wide
+   screen a list of 100+ tests was a full minute of scrolling before anyone
+   reached the booking form. Two (then three) columns cut that way down. */
+.test-cards { display: grid; grid-template-columns: 1fr; gap: 10px; }
+@media (min-width: 640px) {
+  .test-cards { grid-template-columns: repeat(2, 1fr); }
+}
+@media (min-width: 1150px) {
+  .test-cards { grid-template-columns: repeat(3, 1fr); }
+}
+@media (min-width: 1600px) {
+  .test-cards { grid-template-columns: repeat(4, 1fr); }
+}
+.test-card {
+  /* Grid stretches every card in a row to the same height, but without this
+     the price/Add row just sat under whatever content came above it — a
+     card with a short name had its button sitting higher than its taller
+     neighbour. justify-content keeps the top content anchored to the top
+     and pushes the price row to the bottom of every card alike. */
+  display: flex; flex-direction: column; justify-content: space-between; gap: 10px;
+  padding: 14px; border: 1px solid var(--line); border-radius: 12px; background: #fff;
+}
+.test-card-top { display: flex; gap: 10px; align-items: flex-start; }
+.test-card-icon {
+  flex: none; width: 36px; height: 36px; border-radius: 10px;
+  background: var(--bg); color: var(--primary);
+  display: flex; align-items: center; justify-content: center;
+}
+.test-card-body { flex: 1; min-width: 0; }
+.test-card-body h3 { margin: 0 0 4px; font-size: 0.9375rem; line-height: 1.25; }
+.test-card-badges { display: flex; gap: 6px; flex-wrap: wrap; margin-top: 6px; }
+.badge {
+  font-size: 0.75rem; font-weight: 600; padding: 3px 9px; border-radius: 999px;
+  background: var(--ok-bg); color: var(--ok);
+}
+.badge-muted { background: var(--bg); color: var(--ink-faint); font-weight: 500; }
+.badge-warn { background: var(--warn-bg); color: #92400e; }
+.test-card-right {
+  flex: none; display: flex; align-items: center; justify-content: space-between;
+  gap: 8px; padding-top: 8px; border-top: 1px solid var(--line);
+}
+.test-card-price { font-weight: 700; color: var(--ink); font-family: var(--font-head); font-size: 1.0625rem; }
+
+/* ---------- Test list pager (shown only once there's more than one page) ---------- */
+.test-pager {
+  display: flex; align-items: center; justify-content: center; gap: 14px;
+  margin-top: 18px;
+}
+.test-pager-btn {
+  display: inline-flex; align-items: center; gap: 6px;
+  padding: 9px 16px; border-radius: 9px; font-size: 0.875rem; font-weight: 600;
+  cursor: pointer;
+}
+.test-pager-prev { background: #fff; color: var(--ink); border: 1px solid var(--line); }
+.test-pager-prev:hover:not(:disabled) { background: var(--bg); }
+.test-pager-next { background: var(--primary); color: #fff; border: 1px solid var(--primary); }
+.test-pager-next:hover:not(:disabled) { background: var(--cta, var(--primary)); }
+.test-pager-btn:disabled { opacity: 0.4; cursor: not-allowed; }
+.test-pager-of { color: var(--ink-faint); font-size: 0.875rem; }
+
+/* ---------- Audience tiles: "who is this for?" ---------- */
+.audience-tiles { display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px; margin-top: 10px; }
+.audience-tile {
+  display: flex; flex-direction: column; align-items: center; gap: 6px;
+  padding: 14px 6px; border: 1px solid var(--line); border-radius: 12px;
+  background: var(--bg); color: var(--ink-soft); cursor: pointer;
+}
+.audience-tile-photo {
+  width: 56px; height: 56px; border-radius: 999px;
+  overflow: hidden;
+  border: 2px solid var(--line);
+  flex: none;
+}
+.audience-tile-photo img { width: 100%; height: 100%; object-fit: cover; display: block; }
+.audience-tile-label { font-size: 0.8125rem; font-weight: 600; }
+.audience-tile:hover { background: var(--card); border-color: var(--primary); }
+.audience-tile:hover .audience-tile-photo { border-color: var(--primary); }
+
+/* ---------- Audience guide page (what "Men"/"Women"/"Kids"/"Seniors" opens) ---------- */
+.guide-hero { background: var(--primary); color: #fff; padding: 24px 0; }
+.guide-hero-inner { display: flex; align-items: center; gap: 16px; flex-wrap: wrap; }
+.guide-hero-photo {
+  width: 84px; height: 84px; border-radius: 999px; overflow: hidden; flex: none;
+  border: 3px solid rgba(255, 255, 255, 0.35);
+}
+.guide-hero-photo img { width: 100%; height: 100%; object-fit: cover; display: block; }
+.guide-hero h1 { margin: 0 0 2px; font-size: 1.4rem; color: #fff; }
+.guide-hero p { margin: 0; color: rgba(255, 255, 255, 0.85); }
+
+.guide-back { color: var(--ink-soft); font-size: 0.9375rem; text-decoration: none; }
+.guide-back:hover { color: var(--primary); }
+
+.guide-group { margin-bottom: 16px; }
+.guide-group-head {
+  display: flex; align-items: center; justify-content: space-between;
+  gap: 10px; flex-wrap: wrap; margin-bottom: 12px;
+}
+.guide-group-head h2 { margin: 0; font-size: 1.0625rem; }
+
+/* A bigger version of the test-card icon used elsewhere, so the real photo
+   actually reads instead of sitting at the same 36px as a small list row. */
+.guide-card-icon { width: 48px; height: 48px; border-radius: 12px; overflow: hidden; }
+.guide-card-icon .icon-chip-photo { width: 100%; height: 100%; object-fit: cover; display: block; }
+
+.guide-total { margin: 8px 0 0; font-weight: 700; color: var(--ink); }
+
+.guide-empty { text-align: center; padding: 32px 20px; }
+.guide-actions { display: flex; gap: 10px; flex-wrap: wrap; margin-top: 18px; }
+
+/* ---------- Package cards ---------- */
+.pkg-top { display: flex; justify-content: space-between; align-items: baseline; gap: 10px; margin-bottom: 4px; }
+.pkg-top h3 { margin: 0; }
+.pkg-price { font-weight: 700; color: var(--ink); flex: none; font-family: var(--font-head); }
+.pkg-badges { display: flex; gap: 6px; flex-wrap: wrap; margin: 6px 0; }
+.pkg-included { font-size: 0.8125rem; color: var(--ink-faint); }

@@ -14,8 +14,21 @@ import SelectedPanel from "../components/SelectedPanel.jsx";
 import BookingForm from "../components/BookingForm.jsx";
 import Confirmation from "../components/Confirmation.jsx";
 import DemoStrip from "../components/DemoStrip.jsx";
+import LangToggle from "../components/LangToggle.jsx";
+import AudienceTiles from "../components/AudienceTiles.jsx";
+import AboutIllustration from "../components/AboutIllustration.jsx";
+import { LangProvider, useLang } from "../lib/i18n.jsx";
 
 export default function BookingPage() {
+  return (
+    <LangProvider>
+      <BookingPageInner />
+    </LangProvider>
+  );
+}
+
+function BookingPageInner() {
+  const { t } = useLang();
   const { slug } = useParams();
 
   const [data, setData] = useState(null);
@@ -25,6 +38,27 @@ export default function BookingPage() {
   const [picked, setPicked] = useState({ tests: new Set(), packages: new Set() });
   const [query, setQuery] = useState("");
   const [category, setCategory] = useState("All");
+
+  // Dismissing the "Need help?" bar should only last for this one visit —
+  // closing the tab and opening the site again should show it, falling in,
+  // like a first-time visitor. sessionStorage (cleared when the tab closes)
+  // is right for that; localStorage would hide it forever after one click,
+  // which is the bug this replaced. Fails silently in case a browser blocks it.
+  const [helpDismissed, setHelpDismissed] = useState(() => {
+    try {
+      return sessionStorage.getItem("labbook-help-dismissed") === "1";
+    } catch {
+      return false;
+    }
+  });
+  function dismissHelp() {
+    setHelpDismissed(true);
+    try {
+      sessionStorage.setItem("labbook-help-dismissed", "1");
+    } catch {
+      /* ignore */
+    }
+  }
 
   // Date and slots
   const [date, setDate] = useState("");
@@ -96,6 +130,38 @@ export default function BookingPage() {
     () => Object.fromEntries((data?.tests || []).map((t) => [t.code, t])),
     [data]
   );
+
+  // Picks made on the "Men"/"Women"/"Kids"/"Seniors" checkup guide page
+  // arrive here through sessionStorage, since that's a separate route with
+  // no shared React state. Pull them into the basket once the real test
+  // list has loaded (so only codes this lab actually has get added), then
+  // clear the key so a later visit doesn't re-apply the same picks.
+  useEffect(() => {
+    if (!data) return;
+    let codes = [];
+    try {
+      const raw = sessionStorage.getItem(`labbook-pending-tests:${slug}`);
+      codes = raw ? JSON.parse(raw) : [];
+    } catch {
+      codes = [];
+    }
+    if (Array.isArray(codes) && codes.length) {
+      const valid = codes.filter((c) => byCode[c]);
+      if (valid.length) {
+        setPicked((p) => {
+          const tests = new Set(p.tests);
+          for (const c of valid) tests.add(c);
+          return { ...p, tests };
+        });
+      }
+    }
+    try {
+      sessionStorage.removeItem(`labbook-pending-tests:${slug}`);
+    } catch {
+      /* ignore */
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [data, slug]);
   const pkgByCode = useMemo(
     () => Object.fromEntries((data?.packages || []).map((p) => [p.code, p])),
     [data]
@@ -204,7 +270,7 @@ export default function BookingPage() {
   if (loadError) {
     return (
       <main className="center">
-        <h1>This page is not available</h1>
+        <h1>{t.notAvailableTitle}</h1>
         <p className="muted">{loadError}</p>
       </main>
     );
@@ -216,7 +282,7 @@ export default function BookingPage() {
         <div className="skeleton" style={{ height: 34, width: "55%", marginBottom: 12 }} />
         <div className="skeleton" style={{ height: 18, width: "35%", marginBottom: 26 }} />
         <div className="skeleton" style={{ height: 230 }} />
-        <span className="center muted small" style={{ display: "block" }}>Loading…</span>
+        <span className="center muted small" style={{ display: "block" }}>{t.loading}</span>
       </main>
     );
   }
@@ -240,67 +306,158 @@ export default function BookingPage() {
               {lab.tagline && <p className="tagline">{lab.tagline}</p>}
             </div>
           </div>
+          {/* A real menu, like the Book a Test / Health Checkup rows on the
+              bigger diagnostic sites, instead of a bare Directions link —
+              gives first-time visitors a way to jump straight to a section. */}
+          <nav className="head-nav" aria-label={t.findTitle}>
+            <a href="#tests">{t.findTitle}</a>
+            {data.packages.length > 0 && <a href="#packages">{t.packagesTitle}</a>}
+            {lab.kind === "hospital" && <Link to={`/${slug}/appointment`}>Book a doctor</Link>}
+            <Link to={`/${slug}/check`}>{t.heroCheckBooking}</Link>
+            {lab.mapsUrl && (
+              <a href={lab.mapsUrl} target="_blank" rel="noopener noreferrer">
+                {t.directions}
+              </a>
+            )}
+          </nav>
           <div className="head-links">
-            <a href={`tel:${lab.phone.replace(/\s/g, "")}`}>Call {lab.phone}</a>
+            <LangToggle />
+          </div>
+        </div>
+      </header>
+
+      {/* The three things most people open this page to do, in one row they
+          can't miss: call, message on WhatsApp, or check a booking they
+          already made. Burying these in the header's small text links meant
+          first-time visitors scrolled past them without noticing. */}
+      <div className="hero">
+        <div className="wrap">
+          <form
+            className="hero-search-row"
+            onSubmit={(e) => {
+              e.preventDefault();
+              document.getElementById("tests")?.scrollIntoView({ behavior: "smooth", block: "start" });
+            }}
+          >
+            <input
+              className="hero-search"
+              type="search"
+              value={query}
+              onChange={(e) => {
+                const next = e.target.value;
+                setQuery(next);
+                // Typing here filters the "Find a test" list, which now sits
+                // right under this bar, but on short screens it can still be
+                // just off-screen — jump to it once a search actually starts.
+                if (next.trim() && !query.trim()) {
+                  document.getElementById("tests")?.scrollIntoView({ behavior: "smooth", block: "start" });
+                }
+              }}
+              placeholder={t.searchPlaceholder}
+              aria-label={t.searchAria}
+            />
+            <button type="submit" className="hero-search-btn" aria-label={t.searchButton}>
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round">
+                <circle cx="11" cy="11" r="7" />
+                <path d="M20 20l-3.5-3.5" />
+              </svg>
+              <span className="hero-search-btn-label">{t.searchButton}</span>
+            </button>
+          </form>
+          <div className="hero-actions">
+            <a className="hero-action hero-action-call" href={`tel:${lab.phone.replace(/\s/g, "")}`}>
+              <span className="hero-action-badge hero-action-badge-call" aria-hidden="true">
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="#fff">
+                  <path d="M6.6 10.8c1.4 2.8 3.8 5.2 6.6 6.6l2.2-2.2c.3-.3.7-.4 1-.2 1.1.4 2.3.6 3.6.6.6 0 1 .4 1 1V20c0 .6-.4 1-1 1C10.6 21 3 13.4 3 4c0-.6.4-1 1-1h3.2c.6 0 1 .4 1 1 0 1.3.2 2.5.6 3.6.1.4 0 .8-.2 1l-2 2Z" />
+                </svg>
+              </span>
+              <span className="hero-action-label">{t.heroCallUs}</span>
+            </a>
             {lab.whatsapp && (
               <a
+                className="hero-action hero-action-whatsapp"
                 href={`https://wa.me/${lab.whatsapp}?text=${encodeURIComponent(
                   `Hello ${lab.name}, I have a question.`
                 )}`}
                 target="_blank"
                 rel="noopener noreferrer"
               >
-                WhatsApp
+                <span className="hero-action-badge hero-action-badge-whatsapp" aria-hidden="true">
+                  <svg width="20" height="20" viewBox="0 0 24 24" fill="#fff">
+                    <path d="M12 2a10 10 0 0 0-8.6 15.1L2 22l5-1.4A10 10 0 1 0 12 2Zm5.6 14.2c-.2.6-1.3 1.2-1.9 1.3-.5.1-1.1.1-1.8-.1-.4-.1-1-.3-1.6-.6-2.9-1.2-4.7-4.1-4.9-4.3-.1-.2-1.2-1.6-1.2-3s.7-2.1 1-2.4c.3-.3.6-.3.8-.3h.6c.2 0 .4 0 .6.5.2.6.7 1.9.8 2 .1.2.1.4 0 .6-.1.2-.1.3-.3.5l-.4.5c-.1.2-.3.3-.1.6.2.3.9 1.4 1.8 2.3 1.3 1.1 2.3 1.5 2.6 1.7.3.2.5.1.7-.1l.7-.8c.2-.3.4-.2.7-.1l1.8.9c.2.1.4.2.5.3.1.2.1.9-.1 1.5Z" />
+                  </svg>
+                </span>
+                <span className="hero-action-label">{t.heroWhatsapp}</span>
               </a>
             )}
-            {lab.mapsUrl && (
-              <a href={lab.mapsUrl} target="_blank" rel="noopener noreferrer">
-                Directions
-              </a>
-            )}
-            {lab.kind === "hospital" && <Link to={`/${slug}/appointment`}>Book a doctor</Link>}
-            <Link to={`/${slug}/check`}>Check a booking</Link>
+            <Link className="hero-action hero-action-check" to={`/${slug}/check`}>
+              <span className="hero-action-badge hero-action-badge-check" aria-hidden="true">
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="#fff">
+                  <path d="M12 2a10 10 0 1 0 0 20 10 10 0 0 0 0-20Zm-1.3 14.5-4-4 1.4-1.4 2.6 2.6 5.6-5.6L17.7 9.5l-7 7Z" />
+                </svg>
+              </span>
+              <span className="hero-action-label">{t.heroCheckBooking}</span>
+            </Link>
           </div>
         </div>
-      </header>
+      </div>
+
+      {/* An "about" band using only facts that are actually true of this
+          lab right now — its own description, its real test/package
+          counts, its real phone and WhatsApp. No invented trust badges,
+          no stock photos of people, no numbers we can't back up — just
+          an original drawn illustration in the lab's own colour. */}
+      <section className="about-band">
+        <div className="wrap about-band-inner">
+          <div className="about-band-text">
+            <h2>{t.aboutHeading(lab.name)}</h2>
+            {lab.about && <p className="about-band-copy">{lab.about}</p>}
+            <div className="about-band-stats">
+              <div className="about-band-stat">
+                <strong>{data.tests.length}</strong>
+                <span>{t.aboutStatTests(data.tests.length)}</span>
+              </div>
+              {data.packages.length > 0 && (
+                <div className="about-band-stat">
+                  <strong>{data.packages.length}</strong>
+                  <span>{t.aboutStatPackages(data.packages.length)}</span>
+                </div>
+              )}
+            </div>
+            <div className="about-band-actions">
+              {lab.whatsapp && (
+                <a
+                  className="btn btn-primary"
+                  href={`https://wa.me/${lab.whatsapp}?text=${encodeURIComponent(
+                    `Hello ${lab.name}, I have a question.`
+                  )}`}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                >
+                  {t.aboutChat}
+                </a>
+              )}
+              <a className="btn btn-ghost" href={`tel:${lab.phone.replace(/\s/g, "")}`}>
+                {t.aboutCall}
+              </a>
+            </div>
+          </div>
+          <div className="about-band-art">
+            <AboutIllustration />
+          </div>
+        </div>
+      </section>
 
       <div className="wrap">
         {confirmed && <Confirmation booking={confirmed} lab={lab} onDone={() => setConfirmed(null)} />}
 
         <div className="cols">
           <main>
-            {lab.about && (
-              <section className="card">
-                <p className="muted" style={{ margin: 0 }}>{lab.about}</p>
-              </section>
-            )}
-
-            {data.packages.length > 0 && (
-              <section className="card" id="packages">
-                <h2>Health checkup packages</h2>
-                <p className="muted small">
-                  A set of tests at one price. You can also pick tests one by one below.
-                </p>
-                <Packages
-                  packages={data.packages}
-                  lab={lab}
-                  byCode={byCode}
-                  picked={picked.packages}
-                  onToggle={togglePackage}
-                />
-              </section>
-            )}
-
+            {/* The hero search above filters this list, so it has to be the
+                first thing in the column — right under the search bar, not
+                after Audience/Packages where a search felt like it vanished. */}
             <section className="card" id="tests">
-              <h2>Find a test</h2>
-              <input
-                className="search"
-                type="search"
-                value={query}
-                onChange={(e) => setQuery(e.target.value)}
-                placeholder="Type a test name, for example sugar, thyroid, CBC"
-                aria-label="Search tests"
-              />
+              <h2>{t.findTitle}</h2>
               <TestList
                 tests={data.tests}
                 categories={data.categories}
@@ -313,11 +470,28 @@ export default function BookingPage() {
                 onAddQueryToNotes={addQueryToNotes}
               />
             </section>
+
+            {data.packages.length > 0 && (
+              <section className="card" id="packages">
+                <h2>{t.audienceTitle}</h2>
+                <AudienceTiles slug={slug} />
+
+                <h2 style={{ marginTop: 18 }}>{t.packagesTitle}</h2>
+                <p className="muted small">{t.packagesSub}</p>
+                <Packages
+                  packages={data.packages}
+                  lab={lab}
+                  byCode={byCode}
+                  picked={picked.packages}
+                  onToggle={togglePackage}
+                />
+              </section>
+            )}
           </main>
 
           <aside className="side">
             <section className="card">
-              <h2>Your booking</h2>
+              <h2>{t.yourBooking}</h2>
               <SelectedPanel
                 basket={basket}
                 lab={lab}
@@ -329,7 +503,7 @@ export default function BookingPage() {
             </section>
 
             <section className="card" id="book">
-              <h2>Your details</h2>
+              <h2>{t.yourDetails}</h2>
               <BookingForm
                 ref={formRef}
                 lab={lab}
@@ -367,14 +541,50 @@ export default function BookingPage() {
             </span>
 
             <div className="bar-text">
-              <span className="bar-count">
-                {pickedCount} {pickedCount === 1 ? "test" : "tests"} chosen
-              </span>
+              <span className="bar-count">{t.testsChosen(pickedCount)}</span>
               {basket.subtotal !== null && <> · {money(basket.subtotal, lab)}</>}
               {date && <div className="tiny muted">{prettyDate(date, lab)}{slot ? `, ${slot}` : ""}</div>}
             </div>
 
-            <a className="btn btn-primary bar-go" href="#book">Continue</a>
+            <a className="btn btn-primary bar-go" href="#book">{t.continue}</a>
+          </div>
+        </div>
+      )}
+
+      {!helpDismissed && !(pickedCount > 0 && !confirmed) && (
+        <div className="help-bar">
+          <div className="wrap help-bar-inner">
+            <div>
+              <p className="help-bar-title">{t.needHelp}</p>
+              <p className="help-bar-sub">{t.needHelpSub}</p>
+            </div>
+            <div className="help-bar-actions">
+              <a className="btn btn-ghost" href={`tel:${lab.phone.replace(/\s/g, "")}`}>
+                {t.callLabel(lab.phone)}
+              </a>
+              {lab.whatsapp && (
+                <a
+                  className="btn btn-primary"
+                  href={`https://wa.me/${lab.whatsapp}?text=${encodeURIComponent(
+                    `Hello ${lab.name}, I have a question.`
+                  )}`}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                >
+                  {t.whatsapp}
+                </a>
+              )}
+              <button
+                type="button"
+                className="help-bar-close"
+                onClick={dismissHelp}
+                aria-label={t.close}
+              >
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round">
+                  <path d="M6 6l12 12M18 6L6 18" />
+                </svg>
+              </button>
+            </div>
           </div>
         </div>
       )}
