@@ -10,6 +10,7 @@ import galleryWaitingArea from "../assets/gallery/waiting-area.webp";
 import galleryPharmacyCounter from "../assets/gallery/pharmacy-counter.webp";
 import galleryEquipment from "../assets/gallery/equipment.webp";
 import galleryTeam from "../assets/gallery/team.webp";
+import LabIllustration from "../components/LabIllustration.jsx";
 import "../hospital-site.css";
 
 /* ------------------------------------------------------------------ *
@@ -321,7 +322,7 @@ export function TreatmentsPage() {
 const GALLERY_SLOTS = [
   { caption: "Reception", photo: galleryReception },
   { caption: "Sample collection room", photo: gallerySampleCollection },
-  { caption: "Laboratory", photo: null },
+  { caption: "Laboratory", photo: null, illustrated: true },
   { caption: "Consultation room", photo: galleryConsultationRoom },
   { caption: "Waiting area", photo: galleryWaitingArea },
   { caption: "Pharmacy counter", photo: galleryPharmacyCounter },
@@ -342,7 +343,7 @@ function GalleryPlaceholder() {
 }
 
 export function GalleryPage() {
-  const missing = GALLERY_SLOTS.filter((s) => !s.photo);
+  const illustrated = GALLERY_SLOTS.filter((s) => s.illustrated);
   return (
     <HospitalLayout
       eyebrow="GALLERY"
@@ -351,17 +352,21 @@ export function GalleryPage() {
     >
       {({ lab }) => (
         <section className="hs-wrap hs-gallery">
-          {missing.length > 0 && (
+          {illustrated.length > 0 && (
             <p className="hs-gallery-note">
-              {missing.length === 1 ? "One slot is" : `${missing.length} slots are`} still waiting
-              on a photo ({missing.map((s) => s.caption).join(", ")}) — send it and it goes straight in.
+              {illustrated.map((s) => s.caption).join(", ")} {illustrated.length === 1 ? "is" : "are"} shown
+              as an illustration for now — send a real photo and it replaces it.
             </p>
           )}
           <div className="hs-gallery-grid">
-            {GALLERY_SLOTS.map(({ caption, photo }) => (
+            {GALLERY_SLOTS.map(({ caption, photo, illustrated }) => (
               <figure className="hs-gallery-card" key={caption}>
                 {photo ? (
                   <img className="hs-gallery-photo" src={photo} alt={caption} loading="lazy" />
+                ) : illustrated ? (
+                  <div className="hs-gallery-ph hs-gallery-illustration" aria-hidden="true">
+                    <LabIllustration size={120} />
+                  </div>
                 ) : (
                   <GalleryPlaceholder />
                 )}

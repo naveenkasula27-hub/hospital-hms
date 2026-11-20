@@ -17,7 +17,7 @@ import BookingDialog from "../components/BookingDialog.jsx";
 import DemoStrip from "../components/DemoStrip.jsx";
 import LangToggle from "../components/LangToggle.jsx";
 import AudienceTiles from "../components/AudienceTiles.jsx";
-import AboutIllustration from "../components/AboutIllustration.jsx";
+import aboutPhoto from "../assets/gallery/reception.webp";
 import CareBenefits from "../components/CareBenefits.jsx";
 import BookingFAQ from "../components/BookingFAQ.jsx";
 import { initials } from "../lib/hms.js";
@@ -815,7 +815,7 @@ function BookingPageInner() {
               </div>
             </div>
             <div className="about-band-art">
-              <AboutIllustration />
+              <img className="about-band-photo" src={aboutPhoto} alt="" loading="lazy" />
             </div>
           </div>
         </section>

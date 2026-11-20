@@ -138,6 +138,7 @@
   background: repeating-linear-gradient(45deg, #f2f7f9, #f2f7f9 11px, #eaf2f5 11px, #eaf2f5 22px);
 }
 .hs-gallery-photo { width: 100%; aspect-ratio: 4 / 3; object-fit: cover; display: block; }
+.hs-gallery-illustration { background: #eef5f4; color: var(--primary); }
 .hs-gallery-card figcaption { padding: 13px 15px; font-size: .87rem; font-weight: 600; color: #3b606e; }
 @media (max-width: 980px) { .hs-gallery-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
 @media (max-width: 520px) { .hs-gallery-grid { grid-template-columns: 1fr; } }

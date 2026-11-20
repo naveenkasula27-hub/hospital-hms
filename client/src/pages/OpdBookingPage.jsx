@@ -178,6 +178,7 @@ export default function OpdBookingPage() {
     <div className="opd">
       <header className="opd-hero">
         <div className="wrap">
+          <Link to={`/${slug}`} className="opd-back-pill">← Back to home</Link>
           <div className="opd-brand">
             <div className="brand-mark">{initials(h.name)}</div>
             <div>

@@ -440,6 +440,14 @@ a.bed-card:hover { box-shadow: 0 4px 16px rgba(15, 23, 42, 0.1); transform: tran
 .opd-flow-icon-bell { background: #f0a132; }
 .opd-flow-icon-team { background: #7c3aed; }
 @media (max-width: 760px) { .opd-flow-grid { grid-template-columns: 1fr; } }
+.opd-back-pill {
+  display: inline-flex; align-items: center; gap: 6px; margin-bottom: 16px;
+  padding: 9px 16px; background: rgba(255,255,255,0.14); border: 1px solid rgba(255,255,255,0.3);
+  border-radius: 999px; color: #fff; font-weight: 700; font-size: .85rem; text-decoration: none;
+  transition: background .15s, transform .1s;
+}
+.opd-back-pill:hover { background: rgba(255,255,255,0.24); }
+.opd-back-pill:active { transform: scale(.94); }
 .opd-unsure-prompt {
   display: flex; flex-direction: column; gap: 4px; text-align: left; width: 100%;
   margin: 10px 0 16px; padding: 14px 16px; background: #f1eafb; border: 1px solid #ddd0f5;
