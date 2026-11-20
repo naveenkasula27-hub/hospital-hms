@@ -525,7 +525,7 @@ function BookingPageInner() {
                   <path d="M6.6 10.8c1.4 2.8 3.8 5.2 6.6 6.6l2.2-2.2c.3-.3.7-.4 1-.2 1.1.4 2.3.6 3.6.6.6 0 1 .4 1 1V20c0 .6-.4 1-1 1C10.6 21 3 13.4 3 4c0-.6.4-1 1-1h3.2c.6 0 1 .4 1 1 0 1.3.2 2.5.6 3.6.1.4 0 .8-.2 1l-2 2Z" />
                 </svg>
               </span>
-              <span className="hero-action-label">{t.heroCallUs}</span>
+              <span className="hero-action-text"><span className="hero-action-label">{t.heroCallUs}</span><span className="hero-action-sub">{te ? "మా బృందంతో మాట్లాడండి" : "Talk to our team"}</span></span>
             </a>
             {lab.whatsapp && (
               <a
@@ -541,7 +541,7 @@ function BookingPageInner() {
                     <path d="M12 2a10 10 0 0 0-8.6 15.1L2 22l5-1.4A10 10 0 1 0 12 2Zm5.6 14.2c-.2.6-1.3 1.2-1.9 1.3-.5.1-1.1.1-1.8-.1-.4-.1-1-.3-1.6-.6-2.9-1.2-4.7-4.1-4.9-4.3-.1-.2-1.2-1.6-1.2-3s.7-2.1 1-2.4c.3-.3.6-.3.8-.3h.6c.2 0 .4 0 .6.5.2.6.7 1.9.8 2 .1.2.1.4 0 .6-.1.2-.1.3-.3.5l-.4.5c-.1.2-.3.3-.1.6.2.3.9 1.4 1.8 2.3 1.3 1.1 2.3 1.5 2.6 1.7.3.2.5.1.7-.1l.7-.8c.2-.3.4-.2.7-.1l1.8.9c.2.1.4.2.5.3.1.2.1.9-.1 1.5Z" />
                   </svg>
                 </span>
-                <span className="hero-action-label">{t.heroWhatsapp}</span>
+                <span className="hero-action-text"><span className="hero-action-label">{t.heroWhatsapp}</span><span className="hero-action-sub">{te ? "తక్షణ చాట్" : "Chat instantly"}</span></span>
               </a>
             )}
             <Link className="hero-action hero-action-check" to={`/${slug}/check`}>
@@ -550,7 +550,7 @@ function BookingPageInner() {
                   <path d="M12 2a10 10 0 1 0 0 20 10 10 0 0 0 0-20Zm-1.3 14.5-4-4 1.4-1.4 2.6 2.6 5.6-5.6L17.7 9.5l-7 7Z" />
                 </svg>
               </span>
-              <span className="hero-action-label">{t.heroCheckBooking}</span>
+              <span className="hero-action-text"><span className="hero-action-label">{t.heroCheckBooking}</span><span className="hero-action-sub">{te ? "మీ స్థితిని ట్రాక్ చేయండి" : "Track your status"}</span></span>
             </Link>
             {lab.kind === "hospital" && (
               <Link className="hero-action hero-action-doctor" to={`/${slug}/appointment`}>
@@ -563,7 +563,7 @@ function BookingPageInner() {
                     <circle cx="24" cy="33" r="2.4" fill="#7c3aed" />
                   </svg>
                 </span>
-                <span className="hero-action-label">{te ? "డాక్టర్‌ను బుక్ చేయండి" : "Book a doctor"}</span>
+                <span className="hero-action-text"><span className="hero-action-label">{te ? "డాక్టర్‌ను బుక్ చేయండి" : "Book a doctor"}</span><span className="hero-action-sub">{te ? "సమయం ఎంచుకుని టోకెన్ పొందండి" : "Pick a time, get a token"}</span></span>
               </Link>
             )}
           </div>
