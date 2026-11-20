@@ -20,6 +20,7 @@ import AudienceTiles from "../components/AudienceTiles.jsx";
 import AboutIllustration from "../components/AboutIllustration.jsx";
 import CareBenefits from "../components/CareBenefits.jsx";
 import BookingFAQ from "../components/BookingFAQ.jsx";
+import { initials } from "../lib/hms.js";
 import { LangProvider, useLang } from "../lib/i18n.jsx";
 import { EXPERIENCE } from "../lib/experience.js";
 import CategoryIcon from "../lib/categoryIcons.jsx";
@@ -189,6 +190,54 @@ function FeverSpotlight({ tests, lab, slug, lang, picked, onToggle, onBook }) {
   );
 }
 
+/**
+ * "Meet our doctors" — a horizontally scrolling row on the hospital homepage.
+ * Only a teaser: picking a specific doctor and time always happens on the
+ * full appointment page, so every card and the section's own link point
+ * there rather than trying to re-run the booking flow in miniature here.
+ */
+function DoctorsCarousel({ doctors, lab, slug, lang }) {
+  const te = lang === "te";
+  const lane = useRef(null);
+  const move = (direction) => {
+    const el = lane.current;
+    if (!el) return;
+    const maximum = el.scrollWidth - el.clientWidth;
+    const target = Math.max(0, Math.min(maximum, el.scrollLeft + direction * el.clientWidth * 0.85));
+    tweenScroll(el, target);
+  };
+
+  if (!doctors.length) return null;
+
+  return (
+    <section className="lb-doctors" aria-labelledby="doctors-title">
+      <div className="lb-section-heading">
+        <div>
+          <p className="lb-eyebrow">{te ? "మా వైద్యులు" : "OUR SPECIALISTS"}</p>
+          <h2 id="doctors-title">{te ? "మా డాక్టర్లను కలవండి" : "Meet our doctors"}</h2>
+        </div>
+        <div className="lb-lane-controls">
+          <button type="button" aria-label="Previous doctors" onClick={() => move(-1)}>←</button>
+          <button type="button" aria-label="Next doctors" onClick={() => move(1)}>→</button>
+        </div>
+      </div>
+      <ul className="lb-doctor-lane" ref={lane} aria-label="Our doctors; scroll for more">
+        {doctors.map((d) => (
+          <li className="lb-doctor-card" key={d._id}>
+            <span className="lb-doctor-avatar">{initials(d.name)}</span>
+            <strong className="lb-doctor-name">{d.name}</strong>
+            <span className="lb-doctor-specialty">{d.specialty}</span>
+            {d.qualification && <span className="lb-doctor-qual">{d.qualification}</span>}
+            <span className="lb-doctor-fee">{money(d.consultFee, lab)} <small>{te ? "కన్సల్టేషన్" : "consultation"}</small></span>
+            <Link className="lb-doctor-cta" to={`/${slug}/appointment`}>{te ? "అపాయింట్‌మెంట్ బుక్ చేయండి" : "Book appointment"}</Link>
+          </li>
+        ))}
+      </ul>
+      <Link className="lb-doctors-all" to={`/${slug}/appointment`}>{te ? "అందరు డాక్టర్లను చూడండి →" : "See all doctors →"}</Link>
+    </section>
+  );
+}
+
 export default function BookingPage() {
   return (
     <LangProvider>
@@ -286,6 +335,25 @@ function BookingPageInner() {
       alive = false;
     };
   }, [slug]);
+
+  // A teaser row of doctors for the homepage "Meet our doctors" carousel.
+  // Only a hospital deployment has anyone to show here, and only once the
+  // lab itself has loaded (no point guessing the slug is a hospital first).
+  const [doctors, setDoctors] = useState([]);
+  useEffect(() => {
+    if (data?.lab?.kind !== "hospital") {
+      setDoctors([]);
+      return;
+    }
+    let alive = true;
+    fetch(`${import.meta.env.VITE_API_BASE || "/api"}/public/${slug}/opd`)
+      .then((res) => (res.ok ? res.json() : { doctors: [] }))
+      .then((d) => alive && setDoctors(d.doctors || []))
+      .catch(() => alive && setDoctors([]));
+    return () => {
+      alive = false;
+    };
+  }, [slug, data?.lab?.kind]);
 
   useEffect(() => {
     if (!data) return;
@@ -737,6 +805,10 @@ function BookingPageInner() {
           </div>
         </div>
       </section>
+
+      {lab.kind === "hospital" && (
+        <div className="wrap"><DoctorsCarousel doctors={doctors} lab={lab} slug={slug} lang={lang} /></div>
+      )}
 
       {/* "Explore by health category" — a teaser for the same categories
           TestList already filters by; clicking one jumps down and pre-selects

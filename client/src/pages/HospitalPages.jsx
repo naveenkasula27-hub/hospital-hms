@@ -3,6 +3,13 @@ import { Link, NavLink, useParams } from "react-router-dom";
 import { getLab } from "../lib/api.js";
 import { initials } from "../lib/hms.js";
 import DemoStrip from "../components/DemoStrip.jsx";
+import galleryReception from "../assets/gallery/reception.webp";
+import gallerySampleCollection from "../assets/gallery/sample-collection.webp";
+import galleryConsultationRoom from "../assets/gallery/consultation-room.webp";
+import galleryWaitingArea from "../assets/gallery/waiting-area.webp";
+import galleryPharmacyCounter from "../assets/gallery/pharmacy-counter.webp";
+import galleryEquipment from "../assets/gallery/equipment.webp";
+import galleryTeam from "../assets/gallery/team.webp";
 import "../hospital-site.css";
 
 /* ------------------------------------------------------------------ *
@@ -312,17 +319,30 @@ export function TreatmentsPage() {
  * ------------------------------------------------------------------ */
 
 const GALLERY_SLOTS = [
-  "Reception",
-  "Sample collection room",
-  "Laboratory",
-  "Consultation room",
-  "Waiting area",
-  "Pharmacy counter",
-  "Equipment",
-  "Our team",
+  { caption: "Reception", photo: galleryReception },
+  { caption: "Sample collection room", photo: gallerySampleCollection },
+  { caption: "Laboratory", photo: null },
+  { caption: "Consultation room", photo: galleryConsultationRoom },
+  { caption: "Waiting area", photo: galleryWaitingArea },
+  { caption: "Pharmacy counter", photo: galleryPharmacyCounter },
+  { caption: "Equipment", photo: galleryEquipment },
+  { caption: "Our team", photo: galleryTeam },
 ];
 
+function GalleryPlaceholder() {
+  return (
+    <div className="hs-gallery-ph" aria-hidden="true">
+      <svg width="34" height="34" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.6">
+        <rect x="3" y="4" width="18" height="16" rx="2.5" />
+        <circle cx="8.5" cy="9.5" r="1.8" />
+        <path d="m4 17 5-4.5 4 3.3 3-2.4 4 3.6" />
+      </svg>
+    </div>
+  );
+}
+
 export function GalleryPage() {
+  const missing = GALLERY_SLOTS.filter((s) => !s.photo);
   return (
     <HospitalLayout
       eyebrow="GALLERY"
@@ -331,19 +351,20 @@ export function GalleryPage() {
     >
       {({ lab }) => (
         <section className="hs-wrap hs-gallery">
-          <p className="hs-gallery-note">
-            Photo slots are ready — send the pictures and each card below fills in, in this order.
-          </p>
+          {missing.length > 0 && (
+            <p className="hs-gallery-note">
+              {missing.length === 1 ? "One slot is" : `${missing.length} slots are`} still waiting
+              on a photo ({missing.map((s) => s.caption).join(", ")}) — send it and it goes straight in.
+            </p>
+          )}
           <div className="hs-gallery-grid">
-            {GALLERY_SLOTS.map((caption) => (
+            {GALLERY_SLOTS.map(({ caption, photo }) => (
               <figure className="hs-gallery-card" key={caption}>
-                <div className="hs-gallery-ph" aria-hidden="true">
-                  <svg width="34" height="34" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.6">
-                    <rect x="3" y="4" width="18" height="16" rx="2.5" />
-                    <circle cx="8.5" cy="9.5" r="1.8" />
-                    <path d="m4 17 5-4.5 4 3.3 3-2.4 4 3.6" />
-                  </svg>
-                </div>
+                {photo ? (
+                  <img className="hs-gallery-photo" src={photo} alt={caption} loading="lazy" />
+                ) : (
+                  <GalleryPlaceholder />
+                )}
                 <figcaption>{caption}</figcaption>
               </figure>
             ))}

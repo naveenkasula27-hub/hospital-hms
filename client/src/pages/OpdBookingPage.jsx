@@ -3,6 +3,7 @@ import { Link, useParams } from "react-router-dom";
 import { money, prettyDate } from "../lib/api.js";
 import { DAY_SHORT, initials, time12 } from "../lib/hms.js";
 import "../experience.css";
+import "../services.css";
 
 const OPD_FAQ = [
   ["Not sure which doctor to choose?", "Use the “Still unsure which doctor?” box above the doctor list — share your name and number and the hospital will call you back to recommend the right specialist."],
@@ -187,6 +188,11 @@ export default function OpdBookingPage() {
           </div>
           <h2 className="opd-title">Book a doctor's appointment</h2>
           <p className="opd-lead">Pick a doctor and a time. You get a token number straight away.</p>
+          {specialties.length > 0 && (
+            <ul className="opd-specialty-strip" aria-label="Specialties available">
+              {specialties.map((s) => <li key={s}>{s}</li>)}
+            </ul>
+          )}
         </div>
       </header>
 
@@ -257,6 +263,34 @@ export default function OpdBookingPage() {
 
           </>
         )}
+
+        <section className="opd-flow" aria-labelledby="opd-flow-title">
+          <p className="lb-eyebrow">AFTER YOU BOOK</p>
+          <h2 id="opd-flow-title">The rest is handled for you</h2>
+          <div className="opd-flow-grid">
+            <div className="opd-flow-card">
+              <span className="opd-flow-icon opd-flow-icon-wa" aria-hidden="true">
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="#fff"><path d="M12 2a10 10 0 0 0-8.6 15.1L2 22l5-1.4A10 10 0 1 0 12 2Zm5.6 14.2c-.2.6-1.3 1.2-1.9 1.3-.5.1-1.1.1-1.8-.1-.4-.1-1-.3-1.6-.6-2.9-1.2-4.7-4.1-4.9-4.3-.1-.2-1.2-1.6-1.2-3s.7-2.1 1-2.4c.3-.3.6-.3.8-.3h.6c.2 0 .4 0 .6.5.2.6.7 1.9.8 2 .1.2.1.4 0 .6-.1.2-.1.3-.3.5l-.4.5c-.1.2-.3.3-.1.6.2.3.9 1.4 1.8 2.3 1.3 1.1 2.3 1.5 2.6 1.7.3.2.5.1.7-.1l.7-.8c.2-.3.4-.2.7-.1l1.8.9c.2.1.4.2.5.3.1.2.1.9-.1 1.5Z" /></svg>
+              </span>
+              <h3>Instant WhatsApp confirmation</h3>
+              <p>Your token, doctor and time reach your phone the moment you book.</p>
+            </div>
+            <div className="opd-flow-card">
+              <span className="opd-flow-icon opd-flow-icon-bell" aria-hidden="true">
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="#fff"><path d="M12 22a2.2 2.2 0 0 0 2.2-2.2H9.8A2.2 2.2 0 0 0 12 22Zm6.5-5.3v-5.2c0-3.2-1.7-5.8-4.6-6.5V4a1.9 1.9 0 1 0-3.8 0v1c-3 .7-4.6 3.3-4.6 6.5v5.2L4 18.2v.9h16v-.9l-1.5-1.5Z" /></svg>
+              </span>
+              <h3>A reminder before your visit</h3>
+              <p>We'll message you ahead of your appointment so it's never a surprise.</p>
+            </div>
+            <div className="opd-flow-card">
+              <span className="opd-flow-icon opd-flow-icon-team" aria-hidden="true">
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="#fff"><path d="M16 11a3.5 3.5 0 1 0-3.5-3.5A3.5 3.5 0 0 0 16 11Zm-8 0a3.5 3.5 0 1 0-3.5-3.5A3.5 3.5 0 0 0 8 11Zm0 2c-2.7 0-8 1.3-8 4v3h10v-3c0-1 .4-2.6 2.2-3.7A14.6 14.6 0 0 0 8 13Zm8 0c-.6 0-1.3.1-2 .2 1.3 1 2 2.2 2 3.8v3h8v-3c0-2.7-5.3-4-8-4Z" /></svg>
+              </span>
+              <h3>The front desk is alerted instantly</h3>
+              <p>Your appointment reaches reception the moment it's booked, so nothing is missed on the day.</p>
+            </div>
+          </div>
+        </section>
 
         <section className="lb-faq" aria-labelledby="opd-faq-title">
           <div>

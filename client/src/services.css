@@ -4,6 +4,18 @@
 .lb-services .lb-section-heading > p { max-width: 35ch; color: #60747d; }
 .lb-services .lb-section-heading h2,.lb-services .lb-how h2 { font-size: clamp(1.5rem, 2.5vw, 2rem); letter-spacing: -.035em; }
 .lb-service-grid { display: grid; grid-template-columns: repeat(4,minmax(0,1fr)); gap: 16px; margin-top: 26px; }
+.lb-doctors { margin: 44px 0; }
+.lb-doctor-lane { list-style: none; display: flex; gap: 16px; margin: 22px 0 0; padding: 4px 2px 14px; overflow-x: auto; scroll-snap-type: x proximity; scrollbar-width: thin; }
+.lb-doctor-card { scroll-snap-align: start; flex: 0 0 220px; display: flex; flex-direction: column; background: #fff; border: 1px solid #e3ecec; border-radius: 16px; padding: 22px 20px; }
+.lb-doctor-avatar { width: 52px; height: 52px; border-radius: 50%; background: #e6f4f1; color: var(--primary); display: grid; place-items: center; font-size: 1.05rem; font-weight: 700; margin-bottom: 12px; }
+.lb-doctor-name { font-size: 1rem; color: #103f4d; }
+.lb-doctor-specialty { margin-top: 2px; font-size: .78rem; font-weight: 700; text-transform: uppercase; letter-spacing: .02em; color: var(--primary); }
+.lb-doctor-qual { margin-top: 2px; font-size: .8rem; color: #6a858f; }
+.lb-doctor-fee { margin: 14px 0 14px; font-weight: 700; color: #14404a; }
+.lb-doctor-fee small { font-weight: 400; font-size: .76rem; color: var(--ink-faint); margin-left: 4px; }
+.lb-doctor-cta { margin-top: auto; text-align: center; padding: 10px 14px; border-radius: 999px; background: var(--primary); color: #fff; text-decoration: none; font-size: .85rem; font-weight: 700; }
+.lb-doctors-all { display: inline-block; margin-top: 6px; font-size: .88rem; font-weight: 700; color: var(--primary); }
+@media(max-width:650px) { .lb-doctor-lane { gap: 12px; } .lb-doctor-card { flex-basis: 76%; } }
 .lb-flow { margin: 44px 0; }
 .lb-flow-grid { display: grid; grid-template-columns: repeat(4,minmax(0,1fr)); gap: 16px; margin-top: 26px; }
 .lb-flow-card { padding: 24px 22px; background: #fff; border: 1px solid #e3ecec; border-radius: 18px; box-shadow: 0 1px 2px #0f3c4408; }
