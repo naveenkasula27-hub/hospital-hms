@@ -398,6 +398,16 @@ function BookingPageInner() {
               </span>
               <span className="hero-action-label">{t.heroCheckBooking}</span>
             </Link>
+            {lab.kind === "hospital" && (
+              <Link className="hero-action hero-action-doctor" to={`/${slug}/appointment`}>
+                <span className="hero-action-badge hero-action-badge-doctor" aria-hidden="true">
+                  <svg width="20" height="20" viewBox="0 0 24 24" fill="#fff">
+                    <path d="M9 3v4a3 3 0 0 0 6 0V3M6 3v4a6 6 0 0 0 12 0V3M12 13v8M9 21h6" stroke="#fff" strokeWidth="1.8" fill="none" strokeLinecap="round" />
+                  </svg>
+                </span>
+                <span className="hero-action-label">Book a doctor</span>
+              </Link>
+            )}
           </div>
         </div>
       </div>

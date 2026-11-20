@@ -183,22 +183,40 @@ function AudiencePageInner() {
       </header>
 
       <div className="guide-hero">
-        <div className="wrap guide-hero-inner">
-          <span className="guide-hero-photo">
-            <img src={HERO_PHOTOS[audience]} alt="" />
-          </span>
-          <div>
-            <h1>{t.guideHeading(labelFor)}</h1>
-            <p>{guide.ageNote}</p>
+        <div className="wrap">
+          <Link className="guide-back-pill" to={`/${slug}`}>← {t.guideBackToTests}</Link>
+          <div className="guide-hero-inner">
+            <span className="guide-hero-photo">
+              <img src={HERO_PHOTOS[audience]} alt="" />
+            </span>
+            <div className="guide-hero-text">
+              <h1>{t.guideHeading(labelFor)}</h1>
+              <p>{guide.ageNote}</p>
+            </div>
+            {groups.length > 0 && (
+              <div className="guide-hero-actions">
+                <Link className="btn btn-primary btn-sm" to={`/${slug}`}>
+                  {added.size > 0 ? t.guideGoToBookingWithCount(added.size) : t.guideGoToBooking}
+                </Link>
+                {lab.whatsapp && (
+                  <a
+                    className="btn btn-ghost btn-sm guide-hero-whatsapp"
+                    href={`https://wa.me/${lab.whatsapp}?text=${encodeURIComponent(
+                      `Hello ${lab.name}, I have a question about the ${labelFor} checkup.`
+                    )}`}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                  >
+                    {t.aboutChat}
+                  </a>
+                )}
+              </div>
+            )}
           </div>
         </div>
       </div>
 
       <div className="wrap">
-        <p style={{ margin: "16px 0" }}>
-          <Link className="guide-back" to={`/${slug}`}>← {t.guideBackToTests}</Link>
-        </p>
-
         {groups.length === 0 ? (
           <div className="card guide-empty">
             <h2>{t.guideEmptyTitle}</h2>
@@ -293,26 +311,6 @@ function AudiencePageInner() {
               </section>
             );
           })
-        )}
-
-        {groups.length > 0 && (
-          <div className="guide-actions">
-            <Link className="btn btn-primary" to={`/${slug}`}>
-              {added.size > 0 ? t.guideGoToBookingWithCount(added.size) : t.guideGoToBooking}
-            </Link>
-            {lab.whatsapp && (
-              <a
-                className="btn btn-ghost"
-                href={`https://wa.me/${lab.whatsapp}?text=${encodeURIComponent(
-                  `Hello ${lab.name}, I have a question about the ${labelFor} checkup.`
-                )}`}
-                target="_blank"
-                rel="noopener noreferrer"
-              >
-                {t.aboutChat}
-              </a>
-            )}
-          </div>
         )}
       </div>
     </>
