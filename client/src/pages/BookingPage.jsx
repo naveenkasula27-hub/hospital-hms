@@ -17,7 +17,100 @@ import DemoStrip from "../components/DemoStrip.jsx";
 import LangToggle from "../components/LangToggle.jsx";
 import AudienceTiles from "../components/AudienceTiles.jsx";
 import AboutIllustration from "../components/AboutIllustration.jsx";
+import CareBenefits from "../components/CareBenefits.jsx";
+import BookingFAQ from "../components/BookingFAQ.jsx";
 import { LangProvider, useLang } from "../lib/i18n.jsx";
+import { EXPERIENCE } from "../lib/experience.js";
+import CATEGORY_PHOTOS from "../lib/categoryPhotos.jsx";
+import CategoryIcon from "../lib/categoryIcons.jsx";
+import "../experience.css";
+import "../services.css";
+
+/**
+ * A horizontally scrolling spotlight for one category (fixed to "Fever" —
+ * one of the most commonly searched categories, same choice the reference
+ * site made). Auto-advances every 7s, pauses on hover/focus/pointer-down so
+ * a visitor can actually read a card or click its buttons, and respects
+ * prefers-reduced-motion. A category this lab has none of in its catalog
+ * just doesn't render the section.
+ */
+function FeverSpotlight({ tests, lab, picked, onToggle, onBook }) {
+  const lane = useRef(null);
+  const [paused, setPaused] = useState(false);
+  const [interacting, setInteracting] = useState(false);
+  const fever = tests.filter((test) => test.category === "Fever");
+
+  useEffect(() => {
+    const motion = window.matchMedia("(prefers-reduced-motion: reduce)");
+    if (paused || interacting || fever.length < 2 || motion.matches) return;
+    const timer = setInterval(() => {
+      const el = lane.current;
+      if (!el || document.hidden || motion.matches) return;
+      const end = el.scrollLeft >= el.scrollWidth - el.clientWidth - 3;
+      el.scrollTo({ left: end ? 0 : el.scrollLeft + (el.firstElementChild?.getBoundingClientRect().width || 300) + 18, behavior: "smooth" });
+    }, 7000);
+    return () => clearInterval(timer);
+  }, [paused, interacting, fever.length]);
+
+  if (!fever.length) return null;
+
+  const move = (direction) => {
+    setPaused(true);
+    lane.current?.scrollBy({ left: direction * (lane.current.clientWidth * 0.85), behavior: window.matchMedia("(prefers-reduced-motion: reduce)").matches ? "auto" : "smooth" });
+  };
+
+  return (
+    <section className="lb-fever" aria-labelledby="fever-heading">
+      <div className="lb-fever-intro">
+        {CATEGORY_PHOTOS.Fever ? <img src={CATEGORY_PHOTOS.Fever} width="180" height="180" loading="lazy" alt="" /> : <CategoryIcon category="Fever" size={60} />}
+        <p className="lb-eyebrow">WHEN YOU NEED A CLOSER LOOK</p>
+        <h2 id="fever-heading">Fever tests,<br />easy to find.</h2>
+        <p>Find the test your clinician has advised and check the preparation details.</p>
+        <a href="#tests">View fever tests →</a>
+      </div>
+      <div className="lb-fever-content">
+        <div className="lb-fever-heading">
+          <p>Popular tests for fever investigations</p>
+          <div className="lb-lane-controls">
+            <button type="button" aria-label="Previous fever tests" onClick={() => move(-1)}>←</button>
+            <button type="button" onClick={() => setPaused(!paused)} aria-pressed={paused}>{paused ? "Play" : "Pause"}</button>
+            <button type="button" aria-label="Next fever tests" onClick={() => move(1)}>→</button>
+          </div>
+        </div>
+        <ul
+          className="lb-fever-lane"
+          ref={lane}
+          onMouseEnter={() => setInteracting(true)}
+          onMouseLeave={() => setInteracting(false)}
+          onFocusCapture={() => setInteracting(true)}
+          onBlurCapture={(e) => { if (!e.currentTarget.contains(e.relatedTarget)) setInteracting(false); }}
+          onPointerDown={() => setPaused(true)}
+          tabIndex="0"
+          aria-label="Fever tests; scroll for more"
+        >
+          {fever.map((test) => (
+            <li className="lb-fever-card" key={test.code}>
+              <span className="lb-test-category">{test.category}</span>
+              <h3>{test.name}</h3>
+              <p>{test.sample} sample</p>
+              <p className="lb-report-line">Reports: <strong>{test.reportTime || "Confirm with the lab"}</strong></p>
+              <div className="lb-fever-price">
+                <div>
+                  <strong>{typeof test.price === "number" ? money(test.price, lab) : "Ask the lab"}</strong>
+                  <small>Test price</small>
+                </div>
+                <button type="button" className="add" aria-pressed={picked.has(test.code)} aria-label={`${picked.has(test.code) ? "Remove" : "Add"} ${test.name}`} onClick={() => onToggle(test.code)}>
+                  {picked.has(test.code) ? "Added ✓" : "+ Add"}
+                </button>
+              </div>
+              <button className="lb-fever-book" type="button" onClick={() => onBook(test.code)}>Book this test →</button>
+            </li>
+          ))}
+        </ul>
+      </div>
+    </section>
+  );
+}
 
 export default function BookingPage() {
   return (
@@ -28,7 +121,8 @@ export default function BookingPage() {
 }
 
 function BookingPageInner() {
-  const { t } = useLang();
+  const { t, lang } = useLang();
+  const copy = EXPERIENCE[lang];
   const { slug } = useParams();
 
   const [data, setData] = useState(null);
@@ -242,6 +336,13 @@ function BookingPageInner() {
       packages.has(code) ? packages.delete(code) : packages.add(code);
       return { ...p, packages };
     });
+  }
+
+  /** "Book this test →" on the Fever spotlight: add it, then jump straight to the booking form. */
+  function bookTest(code) {
+    startNewIfConfirmed();
+    setPicked((p) => ({ ...p, tests: new Set(p.tests).add(code) }));
+    requestAnimationFrame(() => document.getElementById("book")?.scrollIntoView({ behavior: "smooth", block: "start" }));
   }
 
   function addQueryToNotes(text) {
@@ -458,6 +559,87 @@ function BookingPageInner() {
         </div>
       </section>
 
+      {/* "How we can help" — the real services this site offers, each going
+          straight to the real thing, not a teaser for a page that doesn't
+          exist. The doctor-appointment card only shows for a hospital, since
+          a lab-only deployment has nothing to send it to. */}
+      <section className="wrap lb-services-section" aria-labelledby="services-title">
+        <div className="lb-section-heading">
+          <div><p className="lb-eyebrow">HOW WE CAN HELP</p><h2 id="services-title">Care that fits your day</h2></div>
+          <p>A simpler way to plan your next test.</p>
+        </div>
+        <div className="lb-service-grid">
+          <a href="#tests"><span>01 / LAB TESTS</span><h3>The test you need</h3><p>Browse individual tests with clear sample, preparation, and report details.</p><b>Find a test →</b></a>
+          {data.packages.length > 0 && (
+            <a href="#packages"><span>02 / HEALTH CHECKUPS</span><h3>A wider health picture</h3><p>Explore packages and see exactly which tests are included.</p><b>View checkups →</b></a>
+          )}
+          {lab.kind === "hospital" && (
+            <Link to={`/${slug}/appointment`}><span>03 / DOCTOR APPOINTMENT</span><h3>See a doctor</h3><p>Pick a doctor and a time, and get a token number straight away.</p><b>Book a doctor →</b></Link>
+          )}
+          <a href="#book"><span>{lab.kind === "hospital" ? "04" : "03"} / {lab.homeCollection ? "HOME COLLECTION" : "BOOKING"}</span><h3>{lab.homeCollection ? "Care closer to home" : "Plan your visit"}</h3><p>{lab.homeCollection ? "Choose home collection in the booking form for eligible tests." : "Fill in your details and pick an available date and time."}</p><b>{lab.homeCollection ? "Choose collection →" : "Go to booking →"}</b></a>
+          <Link to={`/${slug}/check`}><span>{lab.kind === "hospital" ? "05" : "04"} / YOUR REPORTS</span><h3>Keep up with your booking</h3><p>Use your booking reference to check progress and released reports.</p><b>Track your booking →</b></Link>
+        </div>
+      </section>
+
+      {/* "Explore by health category" — a teaser for the same categories
+          TestList already filters by; clicking one jumps down and pre-selects
+          it, rather than linking to a page that doesn't exist here. */}
+      {data.categories.length > 0 && (
+        <section className="wrap lb-discover" aria-labelledby="category-title">
+          <div className="lb-section-heading">
+            <div><p className="lb-eyebrow">START WITH WHAT MATTERS TO YOU</p><h2 id="category-title">Explore by health category</h2></div>
+            <a href="#tests" onClick={() => setCategory("All")}>All tests →</a>
+          </div>
+          <div className="lb-category-grid">
+            {data.categories.map((name) => (
+              <a
+                key={name}
+                className="lb-category"
+                href="#tests"
+                onClick={() => setCategory(name)}
+              >
+                {CATEGORY_PHOTOS[name] ? <img src={CATEGORY_PHOTOS[name]} loading="lazy" alt="" /> : <CategoryIcon category={name} size={40} />}
+                <span>{name}</span>
+              </a>
+            ))}
+          </div>
+          <p className="lb-swipe-hint">Scroll to explore more categories →</p>
+        </section>
+      )}
+
+      <div className="wrap"><FeverSpotlight tests={data.tests} lab={lab} picked={picked.tests} onToggle={toggleTest} onBook={bookTest} /></div>
+
+      <div className="wrap">
+        <section className="lb-how">
+          <p className="lb-eyebrow">HOW TO BOOK</p>
+          <h2>From choosing a test to getting your report</h2>
+          <ol>
+            <li><strong>Find & add your tests</strong><p>Choose a category or search by name. Add individual tests or choose a checkup.</p><a href="#tests">Explore tests →</a></li>
+            <li><strong>Choose your collection</strong><p>Continue to booking, fill in your details, and choose an available date and time.</p></li>
+            <li><strong>Follow your booking</strong><p>Save your reference. Use it with your phone number to check status and released reports.</p><Link to={`/${slug}/check`}>Check a booking →</Link></li>
+          </ol>
+        </section>
+
+        <CareBenefits lab={lab} />
+
+        <section className="lb-services-section">
+          <p className="lb-eyebrow">CARE FOR EVERY STAGE</p>
+          <h2>Find a starting point for your checkup</h2>
+          <AudienceTiles slug={slug} />
+        </section>
+
+        <BookingFAQ
+          lab={lab}
+          onHelp={() => {
+            if (lab.whatsapp) {
+              window.open(`https://wa.me/${lab.whatsapp}?text=${encodeURIComponent(`Hello ${lab.name}, I have a question.`)}`, "_blank", "noopener");
+            } else {
+              window.location.href = `tel:${lab.phone.replace(/\s/g, "")}`;
+            }
+          }}
+        />
+      </div>
+
       <div className="wrap">
         {confirmed && <Confirmation booking={confirmed} lab={lab} onDone={() => setConfirmed(null)} />}
 
@@ -483,10 +665,7 @@ function BookingPageInner() {
 
             {data.packages.length > 0 && (
               <section className="card" id="packages">
-                <h2>{t.audienceTitle}</h2>
-                <AudienceTiles slug={slug} />
-
-                <h2 style={{ marginTop: 18 }}>{t.packagesTitle}</h2>
+                <h2>{t.packagesTitle}</h2>
                 <p className="muted small">{t.packagesSub}</p>
                 <Packages
                   packages={data.packages}
