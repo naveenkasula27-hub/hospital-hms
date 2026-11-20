@@ -17,7 +17,7 @@ import BookingDialog from "../components/BookingDialog.jsx";
 import DemoStrip from "../components/DemoStrip.jsx";
 import LangToggle from "../components/LangToggle.jsx";
 import AudienceTiles from "../components/AudienceTiles.jsx";
-import aboutPhoto from "../assets/gallery/reception.webp";
+import aboutPhoto from "../assets/about/hospital-exterior.webp";
 import CareBenefits from "../components/CareBenefits.jsx";
 import BookingFAQ from "../components/BookingFAQ.jsx";
 import { initials } from "../lib/hms.js";
@@ -107,7 +107,7 @@ function FeverSpotlight({ tests, lab, slug, lang, picked, onToggle, onBook }) {
             }
           } else {
             atEnd = 0;
-            el.scrollLeft = Math.min(maximum, el.scrollLeft + delta * 0.09);
+            el.scrollLeft = Math.min(maximum, el.scrollLeft + delta * 0.22);
           }
         }
       }
@@ -231,7 +231,7 @@ function DoctorsCarousel({ doctors, lab, slug, lang }) {
             }
           } else {
             atEnd = 0;
-            el.scrollLeft = Math.min(maximum, el.scrollLeft + delta * 0.09);
+            el.scrollLeft = Math.min(maximum, el.scrollLeft + delta * 0.22);
           }
         }
       }
@@ -334,11 +334,19 @@ function BookingPageInner() {
   // WhatsApp so the lab's own team follows up.
   const [callbackOpen, setCallbackOpen] = useState(false);
   const [callbackForm, setCallbackForm] = useState({ name: "", phone: "", email: "", message: "" });
+  // The confirmation shown after submitting always has to be visible on its
+  // own — opening WhatsApp or a tel: link is a bonus, not something this
+  // screen can depend on. A tel: link does nothing at all on a desktop
+  // browser, which is exactly what made this look broken before.
+  const [callbackSent, setCallbackSent] = useState(null);
   const callbackDialog = useRef(null);
   useEffect(() => {
     const dialog = callbackDialog.current;
     if (!dialog) return;
-    if (callbackOpen && !dialog.open) dialog.showModal();
+    if (callbackOpen && !dialog.open) {
+      setCallbackSent(null);
+      dialog.showModal();
+    }
     if (!callbackOpen && dialog.open) dialog.close();
   }, [callbackOpen]);
 
@@ -358,26 +366,6 @@ function BookingPageInner() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [view, location.search]);
 
-  // Dismissing the "Need help?" bar should only last for this one visit —
-  // closing the tab and opening the site again should show it, falling in,
-  // like a first-time visitor. sessionStorage (cleared when the tab closes)
-  // is right for that; localStorage would hide it forever after one click,
-  // which is the bug this replaced. Fails silently in case a browser blocks it.
-  const [helpDismissed, setHelpDismissed] = useState(() => {
-    try {
-      return sessionStorage.getItem("labbook-help-dismissed") === "1";
-    } catch {
-      return false;
-    }
-  });
-  function dismissHelp() {
-    setHelpDismissed(true);
-    try {
-      sessionStorage.setItem("labbook-help-dismissed", "1");
-    } catch {
-      /* ignore */
-    }
-  }
 
   // Date and slots
   const [date, setDate] = useState("");
@@ -1052,53 +1040,67 @@ function BookingPageInner() {
         onClick={(e) => { if (e.target === e.currentTarget) setCallbackOpen(false); }}
       >
         <button type="button" className="lb-dialog-close" onClick={() => setCallbackOpen(false)} aria-label={copy.close}>×</button>
-        <header>
-          <p className="lb-eyebrow">{lab.name}</p>
-          <h2 id="callback-title">{copy.formTitle}</h2>
-          <p>{copy.formIntro}</p>
-        </header>
-        {lab.isDemo && <p className="lb-demo-note">{copy.demo}</p>}
-        <form
-          className="lb-request-form"
-          onSubmit={(e) => {
-            e.preventDefault();
-            const f = callbackForm;
-            const lines = [
-              `Hello ${lab.name}, I'd like some help with a booking.`,
-              `Name: ${f.name}`,
-              `Phone: ${f.phone}`,
-              f.email ? `Email: ${f.email}` : "",
-              f.message ? `Message: ${f.message}` : "",
-            ].filter(Boolean);
-            if (lab.whatsapp) {
-              window.open(`https://wa.me/${lab.whatsapp}?text=${encodeURIComponent(lines.join("\n"))}`, "_blank", "noopener");
-            } else {
-              window.location.href = `tel:${lab.phone.replace(/\s/g, "")}`;
-            }
-            setCallbackOpen(false);
-            setCallbackForm({ name: "", phone: "", email: "", message: "" });
-          }}
-        >
-          <div className="lb-request-fields">
-            <label htmlFor="cb-name">{copy.name}
-              <input id="cb-name" required minLength={2} maxLength={80} value={callbackForm.name} onChange={(e) => setCallbackForm((f) => ({ ...f, name: e.target.value }))} />
-            </label>
-            <label htmlFor="cb-phone">{copy.phone}
-              <input id="cb-phone" type="tel" required minLength={6} maxLength={30} value={callbackForm.phone} onChange={(e) => setCallbackForm((f) => ({ ...f, phone: e.target.value }))} />
-            </label>
-            <label className="lb-callback-wide" htmlFor="cb-email">{te ? "ఇమెయిల్ (ఐచ్ఛికం)" : "Email (optional)"}
-              <input id="cb-email" type="email" maxLength={160} value={callbackForm.email} onChange={(e) => setCallbackForm((f) => ({ ...f, email: e.target.value }))} />
-            </label>
+        {callbackSent ? (
+          <div className="lb-callback-success" role="status">
+            <p className="lb-eyebrow">{lab.name}</p>
+            <h2 id="callback-title">{lab.isDemo ? copy.demoSaved : copy.saved}</h2>
+            <p>{lab.isDemo ? copy.demoBody : (te ? "బృందం మిమ్మల్ని సంప్రదిస్తుంది." : "The team will contact you shortly to help with your booking.")}</p>
+            <p className="callback-reference"><small>{copy.reference}</small><strong>{callbackSent}</strong></p>
+            <button type="button" className="btn btn-primary" onClick={() => setCallbackOpen(false)}>{copy.done}</button>
+            <a href={`tel:${lab.phone.replace(/\s/g, "")}`}>{copy.call}: {lab.phone}</a>
           </div>
-          <details className="lb-callback-note">
-            <summary>{te ? "ఒక నోట్ జోడించండి (ఐచ్ఛికం)" : "Add a note (optional)"}</summary>
-            <label className="sr-only" htmlFor="cb-message">{copy.message}</label>
-            <textarea id="cb-message" maxLength={300} placeholder={copy.placeholder} value={callbackForm.message} onChange={(e) => setCallbackForm((f) => ({ ...f, message: e.target.value }))} />
-          </details>
-          <p className="lb-request-fine">{copy.fine}</p>
-          <button type="submit" className="lb-request-submit">{copy.submit}</button>
-        </form>
-        <button type="button" className="lb-browse-link" onClick={() => setCallbackOpen(false)}>{copy.browse}</button>
+        ) : (
+          <>
+            <header>
+              <p className="lb-eyebrow">{lab.name}</p>
+              <h2 id="callback-title">{copy.formTitle}</h2>
+              <p>{copy.formIntro}</p>
+            </header>
+            {lab.isDemo && <p className="lb-demo-note">{copy.demo}</p>}
+            <form
+              className="lb-request-form"
+              onSubmit={(e) => {
+                e.preventDefault();
+                const f = callbackForm;
+                const lines = [
+                  `Hello ${lab.name}, I'd like some help with a booking.`,
+                  `Name: ${f.name}`,
+                  `Phone: ${f.phone}`,
+                  f.email ? `Email: ${f.email}` : "",
+                  f.message ? `Message: ${f.message}` : "",
+                ].filter(Boolean);
+                // A real WhatsApp number gets a prefilled chat opened as a
+                // bonus — but the on-screen confirmation below never
+                // depends on that, or on tel:, actually doing anything.
+                if (lab.whatsapp) {
+                  window.open(`https://wa.me/${lab.whatsapp}?text=${encodeURIComponent(lines.join("\n"))}`, "_blank", "noopener");
+                }
+                setCallbackSent(`CB-${Math.random().toString(36).slice(2, 8).toUpperCase()}`);
+                setCallbackForm({ name: "", phone: "", email: "", message: "" });
+              }}
+            >
+              <div className="lb-request-fields">
+                <label htmlFor="cb-name">{copy.name}
+                  <input id="cb-name" required minLength={2} maxLength={80} value={callbackForm.name} onChange={(e) => setCallbackForm((f) => ({ ...f, name: e.target.value }))} />
+                </label>
+                <label htmlFor="cb-phone">{copy.phone}
+                  <input id="cb-phone" type="tel" required minLength={6} maxLength={30} value={callbackForm.phone} onChange={(e) => setCallbackForm((f) => ({ ...f, phone: e.target.value }))} />
+                </label>
+                <label className="lb-callback-wide" htmlFor="cb-email">{te ? "ఇమెయిల్ (ఐచ్ఛికం)" : "Email (optional)"}
+                  <input id="cb-email" type="email" maxLength={160} value={callbackForm.email} onChange={(e) => setCallbackForm((f) => ({ ...f, email: e.target.value }))} />
+                </label>
+              </div>
+              <details className="lb-callback-note">
+                <summary>{te ? "ఒక నోట్ జోడించండి (ఐచ్ఛికం)" : "Add a note (optional)"}</summary>
+                <label className="sr-only" htmlFor="cb-message">{copy.message}</label>
+                <textarea id="cb-message" maxLength={300} placeholder={copy.placeholder} value={callbackForm.message} onChange={(e) => setCallbackForm((f) => ({ ...f, message: e.target.value }))} />
+              </details>
+              <p className="lb-request-fine">{copy.fine}</p>
+              <button type="submit" className="lb-request-submit">{copy.submit}</button>
+            </form>
+            <button type="button" className="lb-browse-link" onClick={() => setCallbackOpen(false)}>{copy.browse}</button>
+          </>
+        )}
       </dialog>
 
       {pickedCount > 0 && !confirmed && (
@@ -1127,43 +1129,10 @@ function BookingPageInner() {
         </div>
       )}
 
-      {!helpDismissed && !(pickedCount > 0 && !confirmed) && (
-        <div className="help-bar">
-          <div className="wrap help-bar-inner">
-            <div>
-              <p className="help-bar-title">{t.needHelp}</p>
-              <p className="help-bar-sub">{t.needHelpSub}</p>
-            </div>
-            <div className="help-bar-actions">
-              <a className="btn btn-ghost" href={`tel:${lab.phone.replace(/\s/g, "")}`}>
-                {t.callLabel(lab.phone)}
-              </a>
-              {lab.whatsapp && (
-                <a
-                  className="btn btn-primary"
-                  href={`https://wa.me/${lab.whatsapp}?text=${encodeURIComponent(
-                    `Hello ${lab.name}, I have a question.`
-                  )}`}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                >
-                  {t.whatsapp}
-                </a>
-              )}
-              <button
-                type="button"
-                className="help-bar-close"
-                onClick={dismissHelp}
-                aria-label={t.close}
-              >
-                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round">
-                  <path d="M6 6l12 12M18 6L6 18" />
-                </svg>
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
+      {/* The floating "Need help?" bar was removed — it duplicated the
+          purple "Help me book" button now in the header, and having both
+          a persistent bottom bar and a header button was one call-to-help
+          too many on the same page. */}
 
       <footer className="site-foot">
         <div className="wrap">

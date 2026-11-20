@@ -82,11 +82,15 @@ export default function OpdBookingPage() {
   const [unsureOpen, setUnsureOpen] = useState(false);
   const [unsureName, setUnsureName] = useState("");
   const [unsurePhone, setUnsurePhone] = useState("");
+  const [unsureSent, setUnsureSent] = useState(null);
   const unsureDialog = useRef(null);
   useEffect(() => {
     const dialog = unsureDialog.current;
     if (!dialog) return;
-    if (unsureOpen && !dialog.open) dialog.showModal();
+    if (unsureOpen && !dialog.open) {
+      setUnsureSent(null);
+      dialog.showModal();
+    }
     if (!unsureOpen && dialog.open) dialog.close();
   }, [unsureOpen]);
 
@@ -431,36 +435,47 @@ export default function OpdBookingPage() {
         onClick={(e) => { if (e.target === e.currentTarget) setUnsureOpen(false); }}
       >
         <button type="button" className="lb-dialog-close" onClick={() => setUnsureOpen(false)} aria-label="Close">×</button>
-        <header>
-          <p className="lb-eyebrow">{h.name}</p>
-          <h2 id="unsure-title">Still unsure about which doctor to choose?</h2>
-          <p>Share a few details and the hospital will guide you to the right specialist.</p>
-        </header>
-        <form
-          className="lb-request-form"
-          onSubmit={(e) => {
-            e.preventDefault();
-            const text = `Hello ${h.name}, I'm not sure which doctor to see.\nName: ${unsureName}\nPhone: ${unsurePhone}\nPlease help me pick the right specialist.`;
-            if (h.whatsapp) {
-              window.open(`https://wa.me/${h.whatsapp}?text=${encodeURIComponent(text)}`, "_blank", "noopener");
-            } else {
-              window.location.href = `tel:${h.phone.replace(/\s/g, "")}`;
-            }
-            setUnsureOpen(false);
-            setUnsureName("");
-            setUnsurePhone("");
-          }}
-        >
-          <div className="lb-request-fields">
-            <label htmlFor="unsure-name">Full name*
-              <input id="unsure-name" required minLength={2} maxLength={80} value={unsureName} onChange={(e) => setUnsureName(e.target.value)} />
-            </label>
-            <label htmlFor="unsure-phone">Phone number*
-              <input id="unsure-phone" type="tel" required minLength={6} maxLength={30} value={unsurePhone} onChange={(e) => setUnsurePhone(e.target.value)} />
-            </label>
+        {unsureSent ? (
+          <div className="lb-callback-success" role="status">
+            <p className="lb-eyebrow">{h.name}</p>
+            <h2 id="unsure-title">{h.isDemo ? "Demo request saved." : "Your request is with the hospital."}</h2>
+            <p>{h.isDemo ? "This is a sample hospital. No real callback will be made." : "The team will contact you shortly to help you pick a specialist."}</p>
+            <p className="callback-reference"><small>Your request reference</small><strong>{unsureSent}</strong></p>
+            <button type="button" className="btn btn-primary" onClick={() => setUnsureOpen(false)}>Done</button>
+            <a href={`tel:${h.phone.replace(/\s/g, "")}`}>Call the hospital: {h.phone}</a>
           </div>
-          <button type="submit" className="lb-request-submit">Submit</button>
-        </form>
+        ) : (
+          <>
+            <header>
+              <p className="lb-eyebrow">{h.name}</p>
+              <h2 id="unsure-title">Still unsure about which doctor to choose?</h2>
+              <p>Share a few details and the hospital will guide you to the right specialist.</p>
+            </header>
+            <form
+              className="lb-request-form"
+              onSubmit={(e) => {
+                e.preventDefault();
+                const text = `Hello ${h.name}, I'm not sure which doctor to see.\nName: ${unsureName}\nPhone: ${unsurePhone}\nPlease help me pick the right specialist.`;
+                if (h.whatsapp) {
+                  window.open(`https://wa.me/${h.whatsapp}?text=${encodeURIComponent(text)}`, "_blank", "noopener");
+                }
+                setUnsureSent(`CB-${Math.random().toString(36).slice(2, 8).toUpperCase()}`);
+                setUnsureName("");
+                setUnsurePhone("");
+              }}
+            >
+              <div className="lb-request-fields">
+                <label htmlFor="unsure-name">Full name*
+                  <input id="unsure-name" required minLength={2} maxLength={80} value={unsureName} onChange={(e) => setUnsureName(e.target.value)} />
+                </label>
+                <label htmlFor="unsure-phone">Phone number*
+                  <input id="unsure-phone" type="tel" required minLength={6} maxLength={30} value={unsurePhone} onChange={(e) => setUnsurePhone(e.target.value)} />
+                </label>
+              </div>
+              <button type="submit" className="lb-request-submit">Submit</button>
+            </form>
+          </>
+        )}
       </dialog>
     </div>
   );

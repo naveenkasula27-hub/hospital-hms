@@ -10,7 +10,7 @@ import galleryWaitingArea from "../assets/gallery/waiting-area.webp";
 import galleryPharmacyCounter from "../assets/gallery/pharmacy-counter.webp";
 import galleryEquipment from "../assets/gallery/equipment.webp";
 import galleryTeam from "../assets/gallery/team.webp";
-import LabIllustration from "../components/LabIllustration.jsx";
+import galleryLaboratory from "../assets/gallery/laboratory.webp";
 import "../hospital-site.css";
 
 /* ------------------------------------------------------------------ *
@@ -322,7 +322,7 @@ export function TreatmentsPage() {
 const GALLERY_SLOTS = [
   { caption: "Reception", photo: galleryReception },
   { caption: "Sample collection room", photo: gallerySampleCollection },
-  { caption: "Laboratory", photo: null, illustrated: true },
+  { caption: "Laboratory", photo: galleryLaboratory },
   { caption: "Consultation room", photo: galleryConsultationRoom },
   { caption: "Waiting area", photo: galleryWaitingArea },
   { caption: "Pharmacy counter", photo: galleryPharmacyCounter },
@@ -343,7 +343,7 @@ function GalleryPlaceholder() {
 }
 
 export function GalleryPage() {
-  const illustrated = GALLERY_SLOTS.filter((s) => s.illustrated);
+  const missing = GALLERY_SLOTS.filter((s) => !s.photo);
   return (
     <HospitalLayout
       eyebrow="GALLERY"
@@ -352,21 +352,16 @@ export function GalleryPage() {
     >
       {({ lab }) => (
         <section className="hs-wrap hs-gallery">
-          {illustrated.length > 0 && (
+          {missing.length > 0 && (
             <p className="hs-gallery-note">
-              {illustrated.map((s) => s.caption).join(", ")} {illustrated.length === 1 ? "is" : "are"} shown
-              as an illustration for now — send a real photo and it replaces it.
+              {missing.map((s) => s.caption).join(", ")} still {missing.length === 1 ? "needs" : "need"} a photo — send it and it goes straight in.
             </p>
           )}
           <div className="hs-gallery-grid">
-            {GALLERY_SLOTS.map(({ caption, photo, illustrated }) => (
+            {GALLERY_SLOTS.map(({ caption, photo }) => (
               <figure className="hs-gallery-card" key={caption}>
                 {photo ? (
                   <img className="hs-gallery-photo" src={photo} alt={caption} loading="lazy" />
-                ) : illustrated ? (
-                  <div className="hs-gallery-ph hs-gallery-illustration" aria-hidden="true">
-                    <LabIllustration size={120} />
-                  </div>
                 ) : (
                   <GalleryPlaceholder />
                 )}
