@@ -250,6 +250,13 @@ p { margin: 0 0 10px; }
 .hero-action-badge-whatsapp { background: #25d366; }
 .hero-action-badge-check { background: var(--accent); }
 .hero-action-badge-doctor { background: #7c3aed; }
+.hero-action-badge-photo { width: 48px; height: 48px; background: #fff; overflow: hidden; }
+
+.hero-flex { display: flex; align-items: center; gap: 28px; padding-top: 20px; }
+.hero-copy { flex: 1 1 380px; min-width: 0; }
+.hero-photo { flex: 0 1 280px; display: none; }
+.hero-photo img { width: 100%; height: auto; border-radius: 18px; box-shadow: 0 16px 34px rgba(0, 0, 0, 0.22); }
+@media (min-width: 860px) { .hero-photo { display: block; } }
 
 /* ---------- About band: real description, real counts, no stock photos ---------- */
 .about-band { background: var(--bg); padding: 34px 0; border-bottom: 1px solid var(--line); }

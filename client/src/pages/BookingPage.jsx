@@ -23,6 +23,7 @@ import { LangProvider, useLang } from "../lib/i18n.jsx";
 import { EXPERIENCE } from "../lib/experience.js";
 import CategoryIcon from "../lib/categoryIcons.jsx";
 import TEST_ICONS from "../lib/testIcons.js";
+import "../storefront.css";
 import "../experience.css";
 import "../services.css";
 
@@ -432,7 +433,8 @@ function BookingPageInner() {
           already made. Burying these in the header's small text links meant
           first-time visitors scrolled past them without noticing. */}
       <div className="hero">
-        <div className="wrap">
+        <div className="wrap hero-flex">
+        <div className="hero-copy">
           <form
             className="hero-search-row"
             onSubmit={(e) => {
@@ -501,15 +503,23 @@ function BookingPageInner() {
             </Link>
             {lab.kind === "hospital" && (
               <Link className="hero-action hero-action-doctor" to={`/${slug}/appointment`}>
-                <span className="hero-action-badge hero-action-badge-doctor" aria-hidden="true">
-                  <svg width="20" height="20" viewBox="0 0 24 24" fill="#fff">
-                    <path d="M9 3v4a3 3 0 0 0 6 0V3M6 3v4a6 6 0 0 0 12 0V3M12 13v8M9 21h6" stroke="#fff" strokeWidth="1.8" fill="none" strokeLinecap="round" />
+                <span className="hero-action-badge hero-action-badge-doctor hero-action-badge-photo" aria-hidden="true">
+                  <svg width="30" height="30" viewBox="0 0 48 48">
+                    <circle cx="24" cy="24" r="24" fill="#ede9fe" />
+                    <circle cx="24" cy="18" r="7" fill="#c4b5fd" />
+                    <path d="M8 42c1-9 7-14 16-14s15 5 16 14" fill="#fff" />
+                    <path d="M15 28c3 2 5.5 3 9 3s6-1 9-3" fill="none" stroke="#7c3aed" strokeWidth="2" strokeLinecap="round" />
+                    <circle cx="24" cy="33" r="2.4" fill="#7c3aed" />
                   </svg>
                 </span>
                 <span className="hero-action-label">Book a doctor</span>
               </Link>
             )}
           </div>
+        </div>
+        <div className="hero-photo" aria-hidden="true">
+          <img src="/images/home-collection-ai.png" alt="" width="640" height="480" loading="eager" fetchpriority="high" />
+        </div>
         </div>
       </div>
 
