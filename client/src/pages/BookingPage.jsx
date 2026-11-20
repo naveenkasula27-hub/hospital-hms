@@ -200,6 +200,50 @@ function FeverSpotlight({ tests, lab, slug, lang, picked, onToggle, onBook }) {
 function DoctorsCarousel({ doctors, lab, slug, lang }) {
   const te = lang === "te";
   const lane = useRef(null);
+  const [paused, setPaused] = useState(false);
+  const [interacting, setInteracting] = useState(false);
+  const [forcePlay, setForcePlay] = useState(false);
+
+  useEffect(() => {
+    const motion = window.matchMedia("(prefers-reduced-motion: reduce)");
+    if (paused || interacting || doctors.length < 2 || (motion.matches && !forcePlay)) return;
+    const el = lane.current;
+    if (!el) return;
+    let frame;
+    let previous;
+    let atEnd = 0;
+    let visible = true;
+    const observer = new IntersectionObserver(([entry]) => {
+      visible = entry.isIntersecting;
+    });
+    observer.observe(el);
+    const tick = (time) => {
+      const delta = previous === undefined ? 0 : Math.min(time - previous, 50);
+      previous = time;
+      if (visible && !document.hidden && (!motion.matches || forcePlay)) {
+        const maximum = el.scrollWidth - el.clientWidth;
+        if (maximum > 1) {
+          if (el.scrollLeft >= maximum - 1) {
+            atEnd += delta;
+            if (atEnd >= 2000) {
+              tweenScroll(el, 0, 700);
+              atEnd = 0;
+            }
+          } else {
+            atEnd = 0;
+            el.scrollLeft = Math.min(maximum, el.scrollLeft + delta * 0.09);
+          }
+        }
+      }
+      frame = requestAnimationFrame(tick);
+    };
+    frame = requestAnimationFrame(tick);
+    return () => {
+      cancelAnimationFrame(frame);
+      observer.disconnect();
+    };
+  }, [paused, interacting, forcePlay, doctors.length]);
+
   const move = (direction) => {
     const el = lane.current;
     if (!el) return;
@@ -219,10 +263,25 @@ function DoctorsCarousel({ doctors, lab, slug, lang }) {
         </div>
         <div className="lb-lane-controls">
           <button type="button" aria-label="Previous doctors" onClick={() => move(-1)}>←</button>
+          <button
+            type="button"
+            onClick={() => { if (paused) setForcePlay(true); setPaused(!paused); }}
+            aria-pressed={paused}
+          >
+            {paused ? (te ? "ప్లే" : "Play") : (te ? "పాజ్" : "Pause")}
+          </button>
           <button type="button" aria-label="Next doctors" onClick={() => move(1)}>→</button>
         </div>
       </div>
-      <ul className="lb-doctor-lane" ref={lane} aria-label="Our doctors; scroll for more">
+      <ul
+        className="lb-doctor-lane"
+        ref={lane}
+        onMouseEnter={() => setInteracting(true)}
+        onMouseLeave={() => setInteracting(false)}
+        onFocusCapture={() => setInteracting(true)}
+        onBlurCapture={(e) => { if (!e.currentTarget.contains(e.relatedTarget)) setInteracting(false); }}
+        tabIndex="0"
+        aria-label="Our doctors; scroll for more">
         {doctors.map((d) => (
           <li className="lb-doctor-card" key={d._id}>
             <span className="lb-doctor-avatar">{initials(d.name)}</span>
@@ -274,7 +333,7 @@ function BookingPageInner() {
   // box: no booking backend involved, it just hands the details to
   // WhatsApp so the lab's own team follows up.
   const [callbackOpen, setCallbackOpen] = useState(false);
-  const [callbackForm, setCallbackForm] = useState({ name: "", phone: "", preferredDate: "", preferredTime: "", message: "" });
+  const [callbackForm, setCallbackForm] = useState({ name: "", phone: "", email: "", message: "" });
   const callbackDialog = useRef(null);
   useEffect(() => {
     const dialog = callbackDialog.current;
@@ -614,6 +673,7 @@ function BookingPageInner() {
           </nav>
           <div className="head-links">
             <LangToggle />
+            <button type="button" className="lb-header-help" onClick={() => setCallbackOpen(true)}>{copy.help}</button>
           </div>
         </div>
       </header>
@@ -991,12 +1051,13 @@ function BookingPageInner() {
         onCancel={(e) => { e.preventDefault(); setCallbackOpen(false); }}
         onClick={(e) => { if (e.target === e.currentTarget) setCallbackOpen(false); }}
       >
-        <button type="button" className="lb-dialog-close" onClick={() => setCallbackOpen(false)} aria-label="Close">×</button>
+        <button type="button" className="lb-dialog-close" onClick={() => setCallbackOpen(false)} aria-label={copy.close}>×</button>
         <header>
           <p className="lb-eyebrow">{lab.name}</p>
-          <h2 id="callback-title">{te ? "సహాయం కోరండి" : "Request a callback"}</h2>
-          <p>{te ? "కొన్ని వివరాలు ఇవ్వండి, ల్యాబ్ బృందం మీకు తిరిగి కాల్ చేసి సహాయం చేస్తుంది." : "Share a few details and the team will call you back to help with your booking."}</p>
+          <h2 id="callback-title">{copy.formTitle}</h2>
+          <p>{copy.formIntro}</p>
         </header>
+        {lab.isDemo && <p className="lb-demo-note">{copy.demo}</p>}
         <form
           className="lb-request-form"
           onSubmit={(e) => {
@@ -1006,8 +1067,7 @@ function BookingPageInner() {
               `Hello ${lab.name}, I'd like some help with a booking.`,
               `Name: ${f.name}`,
               `Phone: ${f.phone}`,
-              f.preferredDate ? `Preferred date: ${f.preferredDate}` : "",
-              f.preferredTime ? `Preferred time: ${f.preferredTime}` : "",
+              f.email ? `Email: ${f.email}` : "",
               f.message ? `Message: ${f.message}` : "",
             ].filter(Boolean);
             if (lab.whatsapp) {
@@ -1016,28 +1076,29 @@ function BookingPageInner() {
               window.location.href = `tel:${lab.phone.replace(/\s/g, "")}`;
             }
             setCallbackOpen(false);
-            setCallbackForm({ name: "", phone: "", preferredDate: "", preferredTime: "", message: "" });
+            setCallbackForm({ name: "", phone: "", email: "", message: "" });
           }}
         >
           <div className="lb-request-fields">
-            <label htmlFor="cb-name">{te ? "పూర్తి పేరు" : "Full name"}*
+            <label htmlFor="cb-name">{copy.name}
               <input id="cb-name" required minLength={2} maxLength={80} value={callbackForm.name} onChange={(e) => setCallbackForm((f) => ({ ...f, name: e.target.value }))} />
             </label>
-            <label htmlFor="cb-phone">{te ? "ఫోన్ నంబర్" : "Phone number"}*
+            <label htmlFor="cb-phone">{copy.phone}
               <input id="cb-phone" type="tel" required minLength={6} maxLength={30} value={callbackForm.phone} onChange={(e) => setCallbackForm((f) => ({ ...f, phone: e.target.value }))} />
             </label>
-            <label htmlFor="cb-date">{te ? "అనుకూలమైన తేదీ (ఐచ్ఛికం)" : "Preferred date (optional)"}
-              <input id="cb-date" type="date" value={callbackForm.preferredDate} onChange={(e) => setCallbackForm((f) => ({ ...f, preferredDate: e.target.value }))} />
-            </label>
-            <label htmlFor="cb-time">{te ? "అనుకూలమైన సమయం (ఐచ్ఛికం)" : "Preferred time (optional)"}
-              <input id="cb-time" type="time" value={callbackForm.preferredTime} onChange={(e) => setCallbackForm((f) => ({ ...f, preferredTime: e.target.value }))} />
+            <label className="lb-callback-wide" htmlFor="cb-email">{te ? "ఇమెయిల్ (ఐచ్ఛికం)" : "Email (optional)"}
+              <input id="cb-email" type="email" maxLength={160} value={callbackForm.email} onChange={(e) => setCallbackForm((f) => ({ ...f, email: e.target.value }))} />
             </label>
           </div>
-          <label className="lb-callback-message" htmlFor="cb-message">{te ? "సందేశం (ఐచ్ఛికం)" : "Message (optional)"}
-            <textarea id="cb-message" rows={3} maxLength={300} placeholder={te ? "ఉదా. హోమ్ కలెక్షన్ ఎంచుకోవడంలో సహాయం కావాలి" : "e.g. help choosing a home collection slot"} value={callbackForm.message} onChange={(e) => setCallbackForm((f) => ({ ...f, message: e.target.value }))} />
-          </label>
-          <button type="submit" className="lb-request-submit">{te ? "సహాయం కోరండి" : "Request help"}</button>
+          <details className="lb-callback-note">
+            <summary>{te ? "ఒక నోట్ జోడించండి (ఐచ్ఛికం)" : "Add a note (optional)"}</summary>
+            <label className="sr-only" htmlFor="cb-message">{copy.message}</label>
+            <textarea id="cb-message" maxLength={300} placeholder={copy.placeholder} value={callbackForm.message} onChange={(e) => setCallbackForm((f) => ({ ...f, message: e.target.value }))} />
+          </details>
+          <p className="lb-request-fine">{copy.fine}</p>
+          <button type="submit" className="lb-request-submit">{copy.submit}</button>
         </form>
+        <button type="button" className="lb-browse-link" onClick={() => setCallbackOpen(false)}>{copy.browse}</button>
       </dialog>
 
       {pickedCount > 0 && !confirmed && (
