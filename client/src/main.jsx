@@ -9,6 +9,7 @@ import DashboardPage from "./pages/DashboardPage.jsx";
 import PrivacyPolicy from "./pages/PrivacyPolicy.jsx";
 import Terms from "./pages/Terms.jsx";
 import OpdBookingPage from "./pages/OpdBookingPage.jsx";
+import { AboutPage, TreatmentsPage, GalleryPage, ContactPage } from "./pages/HospitalPages.jsx";
 import RxPrint from "./pages/hms/RxPrint.jsx";
 import InvoicePrint from "./pages/hms/InvoicePrint.jsx";
 import "./styles.css";
@@ -44,6 +45,12 @@ createRoot(document.getElementById("root")).render(
         <Route path="/:slug/check" element={<CheckBookingPage />} />
         <Route path="/:slug/for/:audience" element={<AudiencePage />} />
         <Route path="/:slug/appointment" element={<OpdBookingPage />} />
+
+        {/* The hospital's own content pages, around the booking screens. */}
+        <Route path="/:slug/about" element={<AboutPage />} />
+        <Route path="/:slug/treatments" element={<TreatmentsPage />} />
+        <Route path="/:slug/gallery" element={<GalleryPage />} />
+        <Route path="/:slug/contact" element={<ContactPage />} />
         <Route path="*" element={<Navigate to="/" replace />} />
       </Routes>
     </BrowserRouter>

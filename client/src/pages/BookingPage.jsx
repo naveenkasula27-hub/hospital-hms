@@ -515,9 +515,13 @@ function BookingPageInner() {
               gives first-time visitors a way to jump straight to a section. */}
           <nav className="head-nav" aria-label={t.findTitle}>
             <Link to={`/${slug}`}>{te ? "హోమ్" : "Home"}</Link>
+            <Link to={`/${slug}/about`}>{te ? "మా గురించి" : "About Us"}</Link>
+            <Link to={`/${slug}/treatments`}>{te ? "చికిత్సలు" : "Treatments"}</Link>
             <Link to={`/${slug}/tests`} aria-current={view === "tests" ? "page" : undefined}>{t.findTitle}</Link>
             {data.packages.length > 0 && <Link to={`/${slug}/checkups`} aria-current={view === "packages" ? "page" : undefined}>{t.packagesTitle}</Link>}
             {lab.kind === "hospital" && <Link to={`/${slug}/appointment`}>{te ? "డాక్టర్‌ను బుక్ చేయండి" : "Book a doctor"}</Link>}
+            <Link to={`/${slug}/gallery`}>{te ? "గ్యాలరీ" : "Gallery"}</Link>
+            <Link to={`/${slug}/contact`}>{te ? "సంప్రదించండి" : "Contact Us"}</Link>
             <Link to={`/${slug}/check`}>{t.heroCheckBooking}</Link>
             {lab.mapsUrl && (
               <a href={lab.mapsUrl} target="_blank" rel="noopener noreferrer">
