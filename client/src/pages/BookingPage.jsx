@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from "react";
-import { useParams, Link } from "react-router-dom";
+import { useParams, Link, useLocation, useNavigate, useSearchParams } from "react-router-dom";
 import {
   getLab,
   getAvailability,
@@ -13,6 +13,7 @@ import Packages from "../components/Packages.jsx";
 import SelectedPanel from "../components/SelectedPanel.jsx";
 import BookingForm from "../components/BookingForm.jsx";
 import Confirmation from "../components/Confirmation.jsx";
+import BookingDialog from "../components/BookingDialog.jsx";
 import DemoStrip from "../components/DemoStrip.jsx";
 import LangToggle from "../components/LangToggle.jsx";
 import AudienceTiles from "../components/AudienceTiles.jsx";
@@ -30,12 +31,13 @@ import "../services.css";
 /**
  * A horizontally scrolling spotlight for one category (fixed to "Fever" —
  * one of the most commonly searched categories, same choice the reference
- * site made). Auto-advances every 7s, pauses on hover/focus/pointer-down so
- * a visitor can actually read a card or click its buttons, and respects
- * prefers-reduced-motion. A category this lab has none of in its catalog
- * just doesn't render the section.
+ * site made). Scrolls continuously and slowly, pauses on hover/focus/
+ * pointer-down so a visitor can actually read a card or click its buttons,
+ * and respects prefers-reduced-motion. A category this lab has none of in
+ * its catalog just doesn't render the section.
  */
-function FeverSpotlight({ tests, lab, picked, onToggle, onBook }) {
+function FeverSpotlight({ tests, lab, slug, lang, picked, onToggle, onBook }) {
+  const te = lang === "te";
   const lane = useRef(null);
   const [paused, setPaused] = useState(false);
   const [interacting, setInteracting] = useState(false);
@@ -44,13 +46,41 @@ function FeverSpotlight({ tests, lab, picked, onToggle, onBook }) {
   useEffect(() => {
     const motion = window.matchMedia("(prefers-reduced-motion: reduce)");
     if (paused || interacting || fever.length < 2 || motion.matches) return;
-    const timer = setInterval(() => {
-      const el = lane.current;
-      if (!el || document.hidden || motion.matches) return;
-      const end = el.scrollLeft >= el.scrollWidth - el.clientWidth - 3;
-      el.scrollTo({ left: end ? 0 : el.scrollLeft + (el.firstElementChild?.getBoundingClientRect().width || 300) + 18, behavior: "smooth" });
-    }, 7000);
-    return () => clearInterval(timer);
+    const el = lane.current;
+    if (!el) return;
+    let frame;
+    let previous;
+    let position = el.scrollLeft;
+    let atEnd = 0;
+    let visible = true;
+    const observer = new IntersectionObserver(([entry]) => {
+      visible = entry.isIntersecting;
+    });
+    observer.observe(el);
+    const tick = (time) => {
+      const delta = previous === undefined ? 0 : Math.min(time - previous, 50);
+      previous = time;
+      if (visible && !document.hidden && !motion.matches) {
+        const maximum = el.scrollWidth - el.clientWidth;
+        if (maximum > 1) {
+          position = Math.min(maximum, position + delta * 0.03);
+          if (position >= maximum) {
+            atEnd += delta;
+            if (atEnd >= 1800) {
+              position = 0;
+              atEnd = 0;
+            }
+          }
+          el.scrollLeft = position;
+        }
+      }
+      frame = requestAnimationFrame(tick);
+    };
+    frame = requestAnimationFrame(tick);
+    return () => {
+      cancelAnimationFrame(frame);
+      observer.disconnect();
+    };
   }, [paused, interacting, fever.length]);
 
   if (!fever.length) return null;
@@ -64,17 +94,17 @@ function FeverSpotlight({ tests, lab, picked, onToggle, onBook }) {
     <section className="lb-fever" aria-labelledby="fever-heading">
       <div className="lb-fever-intro">
         {TEST_ICONS.Fever ? <img src={TEST_ICONS.Fever} width="180" height="180" loading="lazy" alt="" /> : <CategoryIcon category="Fever" size={60} />}
-        <p className="lb-eyebrow">WHEN YOU NEED A CLOSER LOOK</p>
-        <h2 id="fever-heading">Fever tests,<br />easy to find.</h2>
-        <p>Find the test your clinician has advised and check the preparation details.</p>
-        <a href="#tests">View fever tests →</a>
+        <p className="lb-eyebrow">{te ? "మరింత స్పష్టత కావాలా" : "WHEN YOU NEED A CLOSER LOOK"}</p>
+        <h2 id="fever-heading">{te ? <>జ్వర టెస్టులు,<br />సులభంగా కనుగొనండి.</> : <>Fever tests,<br />easy to find.</>}</h2>
+        <p>{te ? "మీ డాక్టర్ సూచించిన టెస్టును కనుగొని సన్నాహాల వివరాలను చూడండి." : "Find the test your clinician has advised and check the preparation details."}</p>
+        <Link to={`/${slug}/tests?category=Fever`}>{te ? "జ్వర టెస్టులు చూడండి →" : "View fever tests →"}</Link>
       </div>
       <div className="lb-fever-content">
         <div className="lb-fever-heading">
-          <p>Popular tests for fever investigations</p>
+          <p>{te ? "జ్వర పరిశోధనల కోసం ప్రసిద్ధ టెస్టులు" : "Popular tests for fever investigations"}</p>
           <div className="lb-lane-controls">
             <button type="button" aria-label="Previous fever tests" onClick={() => move(-1)}>←</button>
-            <button type="button" onClick={() => setPaused(!paused)} aria-pressed={paused}>{paused ? "Play" : "Pause"}</button>
+            <button type="button" onClick={() => setPaused(!paused)} aria-pressed={paused}>{paused ? (te ? "ప్లే" : "Play") : (te ? "పాజ్" : "Pause")}</button>
             <button type="button" aria-label="Next fever tests" onClick={() => move(1)}>→</button>
           </div>
         </div>
@@ -93,18 +123,18 @@ function FeverSpotlight({ tests, lab, picked, onToggle, onBook }) {
             <li className="lb-fever-card" key={test.code}>
               <span className="lb-test-category">{test.category}</span>
               <h3>{test.name}</h3>
-              <p>{test.sample} sample</p>
-              <p className="lb-report-line">Reports: <strong>{test.reportTime || "Confirm with the lab"}</strong></p>
+              <p>{test.sample} {te ? "నమూనా" : "sample"}</p>
+              <p className="lb-report-line">{te ? "రిపోర్ట్:" : "Reports:"} <strong>{test.reportTime || (te ? "ల్యాబ్‌ను అడగండి" : "Confirm with the lab")}</strong></p>
               <div className="lb-fever-price">
                 <div>
-                  <strong>{typeof test.price === "number" ? money(test.price, lab) : "Ask the lab"}</strong>
-                  <small>Test price</small>
+                  <strong>{typeof test.price === "number" ? money(test.price, lab) : (te ? "ల్యాబ్‌ను అడగండి" : "Ask the lab")}</strong>
+                  <small>{te ? "టెస్టు ధర" : "Test price"}</small>
                 </div>
                 <button type="button" className="add" aria-pressed={picked.has(test.code)} aria-label={`${picked.has(test.code) ? "Remove" : "Add"} ${test.name}`} onClick={() => onToggle(test.code)}>
-                  {picked.has(test.code) ? "Added ✓" : "+ Add"}
+                  {picked.has(test.code) ? (te ? "జోడించారు ✓" : "Added ✓") : (te ? "+ జోడించు" : "+ Add")}
                 </button>
               </div>
-              <button className="lb-fever-book" type="button" onClick={() => onBook(test.code)}>Book this test →</button>
+              <button className="lb-fever-book" type="button" onClick={() => onBook(test.code)}>{te ? "ఈ టెస్టును బుక్ చేయండి →" : "Book this test →"}</button>
             </li>
           ))}
         </ul>
@@ -123,16 +153,41 @@ export default function BookingPage() {
 
 function BookingPageInner() {
   const { t, lang } = useLang();
+  const te = lang === "te";
   const copy = EXPERIENCE[lang];
   const { slug } = useParams();
+  const location = useLocation();
+  const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
+
+  // The homepage and the "browse" screens (tests / checkups) are all one
+  // component so the basket and search state survive moving between them —
+  // which one shows is just read off the URL, like labBook does.
+  const view = location.pathname.endsWith("/checkups")
+    ? "packages"
+    : location.pathname.endsWith("/tests")
+    ? "tests"
+    : "home";
 
   const [data, setData] = useState(null);
   const [loadError, setLoadError] = useState("");
+  const [bookingOpen, setBookingOpen] = useState(false);
 
   // What the patient has picked
   const [picked, setPicked] = useState({ tests: new Set(), packages: new Set() });
   const [query, setQuery] = useState("");
   const [category, setCategory] = useState("All");
+
+  // A category chip on the homepage links to /tests?category=X; pick that up
+  // once, when arriving on the tests view, instead of fighting the URL on
+  // every render (the category filter itself lives in plain state so typing
+  // and clearing it stays simple).
+  useEffect(() => {
+    if (view !== "tests") return;
+    const fromUrl = searchParams.get("category");
+    if (fromUrl) setCategory(fromUrl);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [view, location.search]);
 
   // Dismissing the "Need help?" bar should only last for this one visit —
   // closing the tab and opening the site again should show it, falling in,
@@ -339,11 +394,11 @@ function BookingPageInner() {
     });
   }
 
-  /** "Book this test →" on the Fever spotlight: add it, then jump straight to the booking form. */
+  /** "Book this test →" on the Fever spotlight: add it, then open the booking dialog straight away. */
   function bookTest(code) {
     startNewIfConfirmed();
     setPicked((p) => ({ ...p, tests: new Set(p.tests).add(code) }));
-    requestAnimationFrame(() => document.getElementById("book")?.scrollIntoView({ behavior: "smooth", block: "start" }));
+    setBookingOpen(true);
   }
 
   function addQueryToNotes(text) {
@@ -364,6 +419,7 @@ function BookingPageInner() {
     setPicked({ tests: new Set(), packages: new Set() });
     setDate("");
     setSlot("");
+    setBookingOpen(false);
     window.scrollTo({ top: 0, behavior: "smooth" });
     return result;
   }
@@ -412,9 +468,10 @@ function BookingPageInner() {
               bigger diagnostic sites, instead of a bare Directions link —
               gives first-time visitors a way to jump straight to a section. */}
           <nav className="head-nav" aria-label={t.findTitle}>
-            <a href="#tests">{t.findTitle}</a>
-            {data.packages.length > 0 && <a href="#packages">{t.packagesTitle}</a>}
-            {lab.kind === "hospital" && <Link to={`/${slug}/appointment`}>Book a doctor</Link>}
+            <Link to={`/${slug}`}>{te ? "హోమ్" : "Home"}</Link>
+            <Link to={`/${slug}/tests`} aria-current={view === "tests" ? "page" : undefined}>{t.findTitle}</Link>
+            {data.packages.length > 0 && <Link to={`/${slug}/checkups`} aria-current={view === "packages" ? "page" : undefined}>{t.packagesTitle}</Link>}
+            {lab.kind === "hospital" && <Link to={`/${slug}/appointment`}>{te ? "డాక్టర్‌ను బుక్ చేయండి" : "Book a doctor"}</Link>}
             <Link to={`/${slug}/check`}>{t.heroCheckBooking}</Link>
             {lab.mapsUrl && (
               <a href={lab.mapsUrl} target="_blank" rel="noopener noreferrer">
@@ -428,6 +485,9 @@ function BookingPageInner() {
         </div>
       </header>
 
+      {confirmed && <div className="wrap"><Confirmation booking={confirmed} lab={lab} onDone={() => setConfirmed(null)} /></div>}
+
+      {view === "home" && <>
       {/* The three things most people open this page to do, in one row they
           can't miss: call, message on WhatsApp, or check a booking they
           already made. Burying these in the header's small text links meant
@@ -439,23 +499,14 @@ function BookingPageInner() {
             className="hero-search-row"
             onSubmit={(e) => {
               e.preventDefault();
-              document.getElementById("tests")?.scrollIntoView({ behavior: "smooth", block: "start" });
+              navigate(`/${slug}/tests`);
             }}
           >
             <input
               className="hero-search"
               type="search"
               value={query}
-              onChange={(e) => {
-                const next = e.target.value;
-                setQuery(next);
-                // Typing here filters the "Find a test" list, which now sits
-                // right under this bar, but on short screens it can still be
-                // just off-screen — jump to it once a search actually starts.
-                if (next.trim() && !query.trim()) {
-                  document.getElementById("tests")?.scrollIntoView({ behavior: "smooth", block: "start" });
-                }
-              }}
+              onChange={(e) => setQuery(e.target.value)}
               placeholder={t.searchPlaceholder}
               aria-label={t.searchAria}
             />
@@ -512,7 +563,7 @@ function BookingPageInner() {
                     <circle cx="24" cy="33" r="2.4" fill="#7c3aed" />
                   </svg>
                 </span>
-                <span className="hero-action-label">Book a doctor</span>
+                <span className="hero-action-label">{te ? "డాక్టర్‌ను బుక్ చేయండి" : "Book a doctor"}</span>
               </Link>
             )}
           </div>
@@ -575,19 +626,19 @@ function BookingPageInner() {
           a lab-only deployment has nothing to send it to. */}
       <section className="wrap lb-services-section" aria-labelledby="services-title">
         <div className="lb-section-heading">
-          <div><p className="lb-eyebrow">HOW WE CAN HELP</p><h2 id="services-title">Care that fits your day</h2></div>
-          <p>A simpler way to plan your next test.</p>
+          <div><p className="lb-eyebrow">{te ? "మేం ఎలా సహాయం చేయగలం" : "HOW WE CAN HELP"}</p><h2 id="services-title">{te ? "మీ రోజుకు సరిపోయే సంరక్షణ" : "Care that fits your day"}</h2></div>
+          <p>{te ? "మీ తదుపరి టెస్టును ప్లాన్ చేసుకోవడానికి సులభమైన మార్గం." : "A simpler way to plan your next test."}</p>
         </div>
         <div className="lb-service-grid">
-          <a href="#tests"><span>01 / LAB TESTS</span><h3>The test you need</h3><p>Browse individual tests with clear sample, preparation, and report details.</p><b>Find a test →</b></a>
+          <Link to={`/${slug}/tests`}><span>01 / {te ? "ల్యాబ్ టెస్టులు" : "LAB TESTS"}</span><h3>{te ? "మీకు కావాల్సిన టెస్టు" : "The test you need"}</h3><p>{te ? "నమూనా, సన్నాహాలు, రిపోర్ట్ వివరాలతో వ్యక్తిగత టెస్టులను చూడండి." : "Browse individual tests with clear sample, preparation, and report details."}</p><b>{te ? "టెస్టు వెతకండి →" : "Find a test →"}</b></Link>
           {data.packages.length > 0 && (
-            <a href="#packages"><span>02 / HEALTH CHECKUPS</span><h3>A wider health picture</h3><p>Explore packages and see exactly which tests are included.</p><b>View checkups →</b></a>
+            <Link to={`/${slug}/checkups`}><span>02 / {te ? "హెల్త్ చెకప్‌లు" : "HEALTH CHECKUPS"}</span><h3>{te ? "విస్తృత ఆరోగ్య చిత్రం" : "A wider health picture"}</h3><p>{te ? "ప్యాకేజీలను చూసి అందులో ఏ టెస్టులు ఉన్నాయో తెలుసుకోండి." : "Explore packages and see exactly which tests are included."}</p><b>{te ? "చెకప్‌లు చూడండి →" : "View checkups →"}</b></Link>
           )}
           {lab.kind === "hospital" && (
-            <Link to={`/${slug}/appointment`}><span>03 / DOCTOR APPOINTMENT</span><h3>See a doctor</h3><p>Pick a doctor and a time, and get a token number straight away.</p><b>Book a doctor →</b></Link>
+            <Link to={`/${slug}/appointment`}><span>03 / {te ? "డాక్టర్ అపాయింట్‌మెంట్" : "DOCTOR APPOINTMENT"}</span><h3>{te ? "డాక్టర్‌ను కలవండి" : "See a doctor"}</h3><p>{te ? "డాక్టర్, సమయాన్ని ఎంచుకుని వెంటనే టోకెన్ నంబర్ పొందండి." : "Pick a doctor and a time, and get a token number straight away."}</p><b>{te ? "డాక్టర్‌ను బుక్ చేయండి →" : "Book a doctor →"}</b></Link>
           )}
-          <a href="#book"><span>{lab.kind === "hospital" ? "04" : "03"} / {lab.homeCollection ? "HOME COLLECTION" : "BOOKING"}</span><h3>{lab.homeCollection ? "Care closer to home" : "Plan your visit"}</h3><p>{lab.homeCollection ? "Choose home collection in the booking form for eligible tests." : "Fill in your details and pick an available date and time."}</p><b>{lab.homeCollection ? "Choose collection →" : "Go to booking →"}</b></a>
-          <Link to={`/${slug}/check`}><span>{lab.kind === "hospital" ? "05" : "04"} / YOUR REPORTS</span><h3>Keep up with your booking</h3><p>Use your booking reference to check progress and released reports.</p><b>Track your booking →</b></Link>
+          <Link to={`/${slug}/tests`}><span>{lab.kind === "hospital" ? "04" : "03"} / {lab.homeCollection ? (te ? "హోమ్ కలెక్షన్" : "HOME COLLECTION") : (te ? "బుకింగ్" : "BOOKING")}</span><h3>{lab.homeCollection ? (te ? "ఇంటికి దగ్గరగా సంరక్షణ" : "Care closer to home") : (te ? "మీ సందర్శనను ప్లాన్ చేయండి" : "Plan your visit")}</h3><p>{lab.homeCollection ? (te ? "అర్హత ఉన్న టెస్టులకు బుకింగ్ ఫారమ్‌లో హోమ్ కలెక్షన్ ఎంచుకోండి." : "Choose home collection in the booking form for eligible tests.") : (te ? "మీ వివరాలు, అందుబాటులోని తేదీ, సమయాన్ని ఎంచుకోండి." : "Fill in your details and pick an available date and time.")}</p><b>{lab.homeCollection ? (te ? "కలెక్షన్ ఎంచుకోండి →" : "Choose collection →") : (te ? "బుకింగ్‌కు వెళ్లండి →" : "Go to booking →")}</b></Link>
+          <Link to={`/${slug}/check`}><span>{lab.kind === "hospital" ? "05" : "04"} / {te ? "మీ రిపోర్టులు" : "YOUR REPORTS"}</span><h3>{te ? "మీ బుకింగ్‌ను అనుసరించండి" : "Keep up with your booking"}</h3><p>{te ? "పురోగతి, విడుదలైన రిపోర్టులను చూడటానికి బుకింగ్ రిఫరెన్స్ వాడండి." : "Use your booking reference to check progress and released reports."}</p><b>{te ? "మీ బుకింగ్‌ను ట్రాక్ చేయండి →" : "Track your booking →"}</b></Link>
         </div>
       </section>
 
@@ -597,44 +648,43 @@ function BookingPageInner() {
       {data.categories.length > 0 && (
         <section className="wrap lb-discover" aria-labelledby="category-title">
           <div className="lb-section-heading">
-            <div><p className="lb-eyebrow">START WITH WHAT MATTERS TO YOU</p><h2 id="category-title">Explore by health category</h2></div>
-            <a href="#tests" onClick={() => setCategory("All")}>All tests →</a>
+            <div><p className="lb-eyebrow">{te ? "మీకు ముఖ్యమైన దానితో మొదలుపెట్టండి" : "START WITH WHAT MATTERS TO YOU"}</p><h2 id="category-title">{te ? "ఆరోగ్య వర్గం ద్వారా అన్వేషించండి" : "Explore by health category"}</h2></div>
+            <Link to={`/${slug}/tests`}>{te ? "అన్ని టెస్టులు →" : "All tests →"}</Link>
           </div>
           <div className="lb-category-grid">
             {data.categories.map((name) => (
-              <a
+              <Link
                 key={name}
                 className="lb-category"
-                href="#tests"
-                onClick={() => setCategory(name)}
+                to={`/${slug}/tests?category=${encodeURIComponent(name)}`}
               >
                 {TEST_ICONS[name] ? <img src={TEST_ICONS[name]} loading="lazy" alt="" /> : <CategoryIcon category={name} size={40} />}
                 <span>{name}</span>
-              </a>
+              </Link>
             ))}
           </div>
-          <p className="lb-swipe-hint">Scroll to explore more categories →</p>
+          <p className="lb-swipe-hint">{te ? "మరిన్ని వర్గాలను చూడటానికి స్క్రోల్ చేయండి →" : "Scroll to explore more categories →"}</p>
         </section>
       )}
 
-      <div className="wrap"><FeverSpotlight tests={data.tests} lab={lab} picked={picked.tests} onToggle={toggleTest} onBook={bookTest} /></div>
+      <div className="wrap"><FeverSpotlight tests={data.tests} lab={lab} slug={slug} lang={lang} picked={picked.tests} onToggle={toggleTest} onBook={bookTest} /></div>
 
       <div className="wrap">
         <section className="lb-how">
-          <p className="lb-eyebrow">HOW TO BOOK</p>
-          <h2>From choosing a test to getting your report</h2>
+          <p className="lb-eyebrow">{te ? "ఎలా బుక్ చేయాలి" : "HOW TO BOOK"}</p>
+          <h2>{te ? "టెస్టు ఎంచుకోవడం నుండి రిపోర్ట్ వరకు" : "From choosing a test to getting your report"}</h2>
           <ol>
-            <li><strong>Find & add your tests</strong><p>Choose a category or search by name. Add individual tests or choose a checkup.</p><a href="#tests">Explore tests →</a></li>
-            <li><strong>Choose your collection</strong><p>Continue to booking, fill in your details, and choose an available date and time.</p></li>
-            <li><strong>Follow your booking</strong><p>Save your reference. Use it with your phone number to check status and released reports.</p><Link to={`/${slug}/check`}>Check a booking →</Link></li>
+            <li><strong>{te ? "మీ టెస్టులను కనుగొని జోడించండి" : "Find & add your tests"}</strong><p>{te ? "వర్గం లేదా పేరుతో వెతకండి. వ్యక్తిగత టెస్టులు లేదా చెకప్ ఎంచుకోండి." : "Choose a category or search by name. Add individual tests or choose a checkup."}</p><Link to={`/${slug}/tests`}>{te ? "టెస్టులు చూడండి →" : "Explore tests →"}</Link></li>
+            <li><strong>{te ? "మీ సేకరణను ఎంచుకోండి" : "Choose your collection"}</strong><p>{te ? "బుకింగ్‌కు కొనసాగి, వివరాలు నింపి, అందుబాటులోని తేదీ, సమయాన్ని ఎంచుకోండి." : "Continue to booking, fill in your details, and choose an available date and time."}</p></li>
+            <li><strong>{te ? "మీ బుకింగ్‌ను అనుసరించండి" : "Follow your booking"}</strong><p>{te ? "మీ రిఫరెన్స్‌ను దాచుకోండి. స్థితి, రిపోర్టుల కోసం ఫోన్ నంబర్‌తో వాడండి." : "Save your reference. Use it with your phone number to check status and released reports."}</p><Link to={`/${slug}/check`}>{te ? "బుకింగ్ చూడండి →" : "Check a booking →"}</Link></li>
           </ol>
         </section>
 
         <CareBenefits lab={lab} />
 
         <section className="lb-services-section">
-          <p className="lb-eyebrow">CARE FOR EVERY STAGE</p>
-          <h2>Find a starting point for your checkup</h2>
+          <p className="lb-eyebrow">{te ? "ప్రతి దశకు సంరక్షణ" : "CARE FOR EVERY STAGE"}</p>
+          <h2>{te ? "మీ చెకప్ కోసం ప్రారంభ స్థానాన్ని కనుగొనండి" : "Find a starting point for your checkup"}</h2>
           <AudienceTiles slug={slug} />
         </section>
 
@@ -649,34 +699,40 @@ function BookingPageInner() {
           }}
         />
       </div>
+      </>}
 
-      <div className="wrap">
-        {confirmed && <Confirmation booking={confirmed} lab={lab} onDone={() => setConfirmed(null)} />}
+      {view !== "home" && <div className="wrap">
+        <div className="lb-browse-top">
+          <Link to={`/${slug}`}>← {te ? "హోమ్‌కు తిరిగి" : "Back to home"}</Link>
+          <p className="lb-eyebrow">{lab.name}</p>
+          <h2>{view === "packages" ? t.packagesTitle : t.findTitle}</h2>
+          <p>{view === "packages" ? t.packagesSub : (te ? "మీకు కావాల్సింది ఎంచుకోండి. బుక్ చేసే ముందు వివరాలు, ధర చూడండి." : "Choose what you need. See the details and price before you book.")}</p>
+          <div className="lb-route-tabs">
+            <Link to={`/${slug}/tests`} aria-current={view === "tests" ? "page" : undefined}>{te ? "వ్యక్తిగత టెస్టులు" : "Individual tests"}</Link>
+            {data.packages.length > 0 && <Link to={`/${slug}/checkups`} aria-current={view === "packages" ? "page" : undefined}>{t.packagesTitle}</Link>}
+          </div>
+        </div>
 
         <div className="cols">
           <main>
-            {/* The hero search above filters this list, so it has to be the
-                first thing in the column — right under the search bar, not
-                after Audience/Packages where a search felt like it vanished. */}
-            <section className="card" id="tests">
-              <h2>{t.findTitle}</h2>
-              <TestList
-                tests={data.tests}
-                categories={data.categories}
-                lab={lab}
-                query={query}
-                category={category}
-                onCategory={setCategory}
-                picked={picked.tests}
-                onToggle={toggleTest}
-                onAddQueryToNotes={addQueryToNotes}
-              />
-            </section>
+            {view === "tests" && (
+              <section className="card">
+                <TestList
+                  tests={data.tests}
+                  categories={data.categories}
+                  lab={lab}
+                  query={query}
+                  category={category}
+                  onCategory={setCategory}
+                  picked={picked.tests}
+                  onToggle={toggleTest}
+                  onAddQueryToNotes={addQueryToNotes}
+                />
+              </section>
+            )}
 
-            {data.packages.length > 0 && (
-              <section className="card" id="packages">
-                <h2>{t.packagesTitle}</h2>
-                <p className="muted small">{t.packagesSub}</p>
+            {view === "packages" && data.packages.length > 0 && (
+              <section className="card">
                 <Packages
                   packages={data.packages}
                   lab={lab}
@@ -701,28 +757,41 @@ function BookingPageInner() {
               />
             </section>
 
-            <section className="card" id="book">
-              <h2>{t.yourDetails}</h2>
-              <BookingForm
-                ref={formRef}
-                lab={lab}
-                basket={basket}
-                labOnly={labOnly}
-                date={date}
-                slot={slot}
-                availability={availability}
-                minDate={todayForLab(lab)}
-                onDate={(d) => {
-                  setDate(d);
-                  setSlot("");
-                }}
-                onSlot={setSlot}
-                onSubmit={submit}
-              />
+            <section className="card lb-booking-help">
+              <h2>{te ? "మీ సందర్శనకు సిద్ధమా?" : "Ready to book?"}</h2>
+              <p className="muted small">{te ? "టెస్టులు ఎంచుకుని మీకు అనుకూలమైన తేదీ, సమయాన్ని ఎంచుకోండి." : "Choose your tests or checkups, then pick a date and time."}</p>
+              <button type="button" className="btn btn-primary" onClick={() => setBookingOpen(true)} disabled={pickedCount === 0}>
+                {te ? "బుకింగ్‌కు కొనసాగండి" : "Continue to booking"}
+              </button>
             </section>
           </aside>
         </div>
-      </div>
+      </div>}
+
+      <BookingDialog open={bookingOpen} onClose={() => setBookingOpen(false)}>
+        <SelectedPanel
+          basket={basket}
+          lab={lab}
+          fastingNotes={fastingNotes}
+          onRemove={(item) => (item.kind === "package" ? togglePackage(item.code) : toggleTest(item.code))}
+        />
+        <BookingForm
+          ref={formRef}
+          lab={lab}
+          basket={basket}
+          labOnly={labOnly}
+          date={date}
+          slot={slot}
+          availability={availability}
+          minDate={todayForLab(lab)}
+          onDate={(d) => {
+            setDate(d);
+            setSlot("");
+          }}
+          onSlot={setSlot}
+          onSubmit={submit}
+        />
+      </BookingDialog>
 
       {pickedCount > 0 && !confirmed && (
         <div className="bar">
@@ -745,7 +814,7 @@ function BookingPageInner() {
               {date && <div className="tiny muted">{prettyDate(date, lab)}{slot ? `, ${slot}` : ""}</div>}
             </div>
 
-            <a className="btn btn-primary bar-go" href="#book">{t.continue}</a>
+            <button type="button" className="btn btn-primary bar-go" onClick={() => setBookingOpen(true)}>{t.continue}</button>
           </div>
         </div>
       )}

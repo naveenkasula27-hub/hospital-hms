@@ -16,6 +16,12 @@ import liver from "../assets/test-icons/liver.png";
 import vitamins from "../assets/test-icons/vitamins.png";
 import diabetes from "../assets/test-icons/diabetes.png";
 import routine from "../assets/test-icons/routine.png";
+import scans from "../assets/test-icons/scans.png";
+import allergy from "../assets/test-icons/allergy.png";
+import clotting from "../assets/test-icons/clotting.png";
+import markers from "../assets/test-icons/markers.png";
+import stool from "../assets/test-icons/stool.png";
+import urine from "../assets/test-icons/urine.png";
 
 const TEST_ICONS = {
   Thyroid: thyroid,
@@ -28,6 +34,12 @@ const TEST_ICONS = {
   Vitamins: vitamins,
   Diabetes: diabetes,
   Routine: routine,
+  Scans: scans,
+  Allergy: allergy,
+  Clotting: clotting,
+  Markers: markers,
+  Stool: stool,
+  Urine: urine,
 };
 
 export default TEST_ICONS;

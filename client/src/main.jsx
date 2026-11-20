@@ -40,7 +40,7 @@ createRoot(document.getElementById("root")).render(
         <Route path="/terms" element={<Terms />} />
 
         {/* Each lab gets its own address: /nandu */}
-        <Route path="/:slug" element={<BookingPage />} />
+        <Route path="/:slug/*" element={<BookingPage />} />
         <Route path="/:slug/check" element={<CheckBookingPage />} />
         <Route path="/:slug/for/:audience" element={<AudiencePage />} />
         <Route path="/:slug/appointment" element={<OpdBookingPage />} />
