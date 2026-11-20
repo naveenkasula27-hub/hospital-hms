@@ -63,7 +63,7 @@ function FeverSpotlight({ tests, lab, slug, lang, picked, onToggle, onBook }) {
       if (visible && !document.hidden && !motion.matches) {
         const maximum = el.scrollWidth - el.clientWidth;
         if (maximum > 1) {
-          position = Math.min(maximum, position + delta * 0.03);
+          position = Math.min(maximum, position + delta * 0.09);
           if (position >= maximum) {
             atEnd += delta;
             if (atEnd >= 1800) {

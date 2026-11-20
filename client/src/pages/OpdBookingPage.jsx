@@ -1,7 +1,16 @@
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { Link, useParams } from "react-router-dom";
 import { money, prettyDate } from "../lib/api.js";
 import { DAY_SHORT, initials, time12 } from "../lib/hms.js";
+import "../experience.css";
+
+const OPD_FAQ = [
+  ["Not sure which doctor to choose?", "Use the “Still unsure which doctor?” box above the doctor list — share your name and number and the hospital will call you back to recommend the right specialist."],
+  ["What is the token number for?", "It is your place in that doctor's queue for the day you booked. Show it at the reception when you arrive."],
+  ["Can I reschedule or cancel my appointment?", "Call the hospital with your reference and token number. They will move or cancel the slot for you."],
+  ["Do I pay online when I book?", "No. The consultation fee shown on each doctor's card is paid at the reception on the day of your visit."],
+  ["What if I need to see a doctor urgently?", "Online booking is for scheduled visits. For an urgent or emergency need, call the hospital directly instead of booking online."],
+];
 
 const BASE = import.meta.env.VITE_API_BASE || "/api";
 
@@ -39,6 +48,17 @@ export default function OpdBookingPage() {
   const [error, setError] = useState(null);
   const [busy, setBusy] = useState(false);
   const [done, setDone] = useState(null);
+
+  const [unsureOpen, setUnsureOpen] = useState(false);
+  const [unsureName, setUnsureName] = useState("");
+  const [unsurePhone, setUnsurePhone] = useState("");
+  const unsureDialog = useRef(null);
+  useEffect(() => {
+    const dialog = unsureDialog.current;
+    if (!dialog) return;
+    if (unsureOpen && !dialog.open) dialog.showModal();
+    if (!unsureOpen && dialog.open) dialog.close();
+  }, [unsureOpen]);
 
   useEffect(() => {
     call(`/public/${slug}/opd`)
@@ -153,6 +173,10 @@ export default function OpdBookingPage() {
           <>
             <section className="card">
               <h3 className="opd-step"><span>1</span> Choose a doctor</h3>
+              <button type="button" className="opd-unsure-prompt" onClick={() => setUnsureOpen(true)}>
+                <strong>Still unsure which doctor?</strong>
+                <span>Share your name and number — the hospital will guide you to the right specialist.</span>
+              </button>
               {specialties.length > 1 && (
                 <div className="chips" role="group" aria-label="Specialty">
                   <button type="button" className="chip" aria-pressed={!specialty} onClick={() => setSpecialty("")}>All</button>
@@ -254,10 +278,66 @@ export default function OpdBookingPage() {
           </>
         )}
 
+        <section className="lb-faq" aria-labelledby="opd-faq-title">
+          <div>
+            <p className="lb-eyebrow">{h.name}</p>
+            <h2 id="opd-faq-title">A few questions, made simple.</h2>
+            <p>The practical details you need before you book a doctor.</p>
+          </div>
+          <div>
+            {OPD_FAQ.map(([q, a]) => (
+              <details key={q}>
+                <summary>{q}</summary>
+                <p>{a}</p>
+              </details>
+            ))}
+          </div>
+        </section>
+
         <p className="muted tiny" style={{ textAlign: "center" }}>
           Need a lab test instead? <Link to={`/${slug}`}>Book a lab test</Link>
         </p>
       </main>
+
+      <dialog
+        ref={unsureDialog}
+        className="lb-appointment-request opd-unsure-dialog"
+        aria-labelledby="unsure-title"
+        onCancel={(e) => { e.preventDefault(); setUnsureOpen(false); }}
+        onClick={(e) => { if (e.target === e.currentTarget) setUnsureOpen(false); }}
+      >
+        <button type="button" className="lb-dialog-close" onClick={() => setUnsureOpen(false)} aria-label="Close">×</button>
+        <header>
+          <p className="lb-eyebrow">{h.name}</p>
+          <h2 id="unsure-title">Still unsure about which doctor to choose?</h2>
+          <p>Share a few details and the hospital will guide you to the right specialist.</p>
+        </header>
+        <form
+          className="lb-request-form"
+          onSubmit={(e) => {
+            e.preventDefault();
+            const text = `Hello ${h.name}, I'm not sure which doctor to see.\nName: ${unsureName}\nPhone: ${unsurePhone}\nPlease help me pick the right specialist.`;
+            if (h.whatsapp) {
+              window.open(`https://wa.me/${h.whatsapp}?text=${encodeURIComponent(text)}`, "_blank", "noopener");
+            } else {
+              window.location.href = `tel:${h.phone.replace(/\s/g, "")}`;
+            }
+            setUnsureOpen(false);
+            setUnsureName("");
+            setUnsurePhone("");
+          }}
+        >
+          <div className="lb-request-fields">
+            <label htmlFor="unsure-name">Full name*
+              <input id="unsure-name" required minLength={2} maxLength={80} value={unsureName} onChange={(e) => setUnsureName(e.target.value)} />
+            </label>
+            <label htmlFor="unsure-phone">Phone number*
+              <input id="unsure-phone" type="tel" required minLength={6} maxLength={30} value={unsurePhone} onChange={(e) => setUnsurePhone(e.target.value)} />
+            </label>
+          </div>
+          <button type="submit" className="lb-request-submit">Submit</button>
+        </form>
+      </dialog>
     </div>
   );
 }

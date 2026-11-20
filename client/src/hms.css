@@ -422,6 +422,22 @@ a.bed-card:hover { box-shadow: 0 4px 16px rgba(15, 23, 42, 0.1); transform: tran
   width: 26px; height: 26px; border-radius: 50%; display: grid; place-items: center;
   background: var(--primary); color: #fff; font-size: 0.8rem;
 }
+.opd-unsure-prompt {
+  display: flex; flex-direction: column; gap: 4px; text-align: left; width: 100%;
+  margin: 10px 0 16px; padding: 14px 16px; background: #f1eafb; border: 1px solid #ddd0f5;
+  border-radius: 12px; cursor: pointer; font: inherit; color: #5b3aa3; transition: background .15s;
+}
+.opd-unsure-prompt:hover { background: #e8ddf9; }
+.opd-unsure-prompt strong { font-size: 0.95rem; }
+.opd-unsure-prompt span { font-size: 0.82rem; color: #6b5a93; }
+.opd-unsure-dialog { border: 0; padding: 36px 32px 28px; border-radius: 18px; width: min(560px, calc(100% - 32px)); color: #153d50; background: #fff; box-shadow: 0 24px 90px #071e3540; }
+.opd-unsure-dialog::backdrop { background: #102334a8; backdrop-filter: blur(3px); }
+.lb-request-fields { display: grid; grid-template-columns: 1fr 1fr; gap: 20px 24px; margin-top: 18px; }
+.lb-request-fields label { font-size: .875rem; font-weight: 700; color: #3e5b6b; }
+.lb-request-fields input { width: 100%; padding: 13px 14px; min-width: 0; border: 1px solid #cbd9e2; border-radius: 7px; background: #fff; color: #193b4d; font: 1rem var(--font-body, inherit); margin-top: 7px; min-height: 48px; box-sizing: border-box; }
+.lb-request-submit { cursor: pointer; width: 100%; border-radius: 999px; border: 1px solid #0d6881; background: #0d6881; color: #fff; font: 700 1rem var(--font-body, inherit); padding: 16px 20px; margin-top: 20px; box-shadow: 0 3px 0 #09485b; }
+.lb-request-submit:hover { background: #0a566e; }
+@media (max-width: 600px) { .lb-request-fields { grid-template-columns: 1fr; gap: 16px; } }
 .opd-doctors {
   list-style: none; margin: 14px 0 0; padding: 0; display: grid; gap: 16px;
   grid-template-columns: repeat(auto-fill, minmax(230px, 1fr));
