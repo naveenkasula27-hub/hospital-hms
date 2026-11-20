@@ -629,7 +629,7 @@ function BookingPageInner() {
           <div><p className="lb-eyebrow">{te ? "మేం ఎలా సహాయం చేయగలం" : "HOW WE CAN HELP"}</p><h2 id="services-title">{te ? "మీ రోజుకు సరిపోయే సంరక్షణ" : "Care that fits your day"}</h2></div>
           <p>{te ? "మీ తదుపరి టెస్టును ప్లాన్ చేసుకోవడానికి సులభమైన మార్గం." : "A simpler way to plan your next test."}</p>
         </div>
-        <div className="lb-service-grid">
+        <div className={`lb-service-grid lb-service-grid-${3 + (data.packages.length > 0 ? 1 : 0) + (lab.kind === "hospital" ? 1 : 0)}`}>
           <Link to={`/${slug}/tests`}><span>01 / {te ? "ల్యాబ్ టెస్టులు" : "LAB TESTS"}</span><h3>{te ? "మీకు కావాల్సిన టెస్టు" : "The test you need"}</h3><p>{te ? "నమూనా, సన్నాహాలు, రిపోర్ట్ వివరాలతో వ్యక్తిగత టెస్టులను చూడండి." : "Browse individual tests with clear sample, preparation, and report details."}</p><b>{te ? "టెస్టు వెతకండి →" : "Find a test →"}</b></Link>
           {data.packages.length > 0 && (
             <Link to={`/${slug}/checkups`}><span>02 / {te ? "హెల్త్ చెకప్‌లు" : "HEALTH CHECKUPS"}</span><h3>{te ? "విస్తృత ఆరోగ్య చిత్రం" : "A wider health picture"}</h3><p>{te ? "ప్యాకేజీలను చూసి అందులో ఏ టెస్టులు ఉన్నాయో తెలుసుకోండి." : "Explore packages and see exactly which tests are included."}</p><b>{te ? "చెకప్‌లు చూడండి →" : "View checkups →"}</b></Link>
