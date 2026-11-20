@@ -36,21 +36,52 @@ import "../services.css";
  * and respects prefers-reduced-motion. A category this lab has none of in
  * its catalog just doesn't render the section.
  */
+/**
+ * Scrolls `el` to `target` with our own eased animation.
+ *
+ * Native scrollTo/scrollBy with behavior:"smooth" silently does nothing in
+ * some rendering contexts — the call returns, no error, and scrollLeft never
+ * moves — which left every arrow button and the loop-back-to-start dead.
+ * Writing scrollLeft directly always works, so we drive the easing ourselves.
+ */
+function tweenScroll(el, target, duration = 420) {
+  if (!el) return;
+  const from = el.scrollLeft;
+  const change = target - from;
+  if (Math.abs(change) < 1) return;
+  if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) {
+    el.scrollLeft = target;
+    return;
+  }
+  let started;
+  const step = (now) => {
+    if (started === undefined) started = now;
+    const p = Math.min(1, (now - started) / duration);
+    const eased = p < 0.5 ? 2 * p * p : 1 - (-2 * p + 2) ** 2 / 2;
+    el.scrollLeft = from + change * eased;
+    if (p < 1) requestAnimationFrame(step);
+  };
+  requestAnimationFrame(step);
+}
+
 function FeverSpotlight({ tests, lab, slug, lang, picked, onToggle, onBook }) {
   const te = lang === "te";
   const lane = useRef(null);
   const [paused, setPaused] = useState(false);
   const [interacting, setInteracting] = useState(false);
+  // Someone running their system on "reduce motion" gets a still carousel,
+  // which is the right default — but pressing Play is them asking for it
+  // anyway, so that choice overrides the system preference.
+  const [forcePlay, setForcePlay] = useState(false);
   const fever = tests.filter((test) => test.category === "Fever");
 
   useEffect(() => {
     const motion = window.matchMedia("(prefers-reduced-motion: reduce)");
-    if (paused || interacting || fever.length < 2 || motion.matches) return;
+    if (paused || interacting || fever.length < 2 || (motion.matches && !forcePlay)) return;
     const el = lane.current;
     if (!el) return;
     let frame;
     let previous;
-    let position = el.scrollLeft;
     let atEnd = 0;
     let visible = true;
     const observer = new IntersectionObserver(([entry]) => {
@@ -60,18 +91,22 @@ function FeverSpotlight({ tests, lab, slug, lang, picked, onToggle, onBook }) {
     const tick = (time) => {
       const delta = previous === undefined ? 0 : Math.min(time - previous, 50);
       previous = time;
-      if (visible && !document.hidden && !motion.matches) {
+      // Reading scrollLeft each frame (rather than tracking our own position)
+      // means a visitor's own swipe or an arrow press is never fought or
+      // undone — we just carry on from wherever the lane actually sits.
+      if (visible && !document.hidden && (!motion.matches || forcePlay)) {
         const maximum = el.scrollWidth - el.clientWidth;
         if (maximum > 1) {
-          position = Math.min(maximum, position + delta * 0.09);
-          if (position >= maximum) {
+          if (el.scrollLeft >= maximum - 1) {
             atEnd += delta;
-            if (atEnd >= 1800) {
-              position = 0;
+            if (atEnd >= 2000) {
+              tweenScroll(el, 0, 700);
               atEnd = 0;
             }
+          } else {
+            atEnd = 0;
+            el.scrollLeft = Math.min(maximum, el.scrollLeft + delta * 0.09);
           }
-          el.scrollLeft = position;
         }
       }
       frame = requestAnimationFrame(tick);
@@ -81,13 +116,19 @@ function FeverSpotlight({ tests, lab, slug, lang, picked, onToggle, onBook }) {
       cancelAnimationFrame(frame);
       observer.disconnect();
     };
-  }, [paused, interacting, fever.length]);
+  }, [paused, interacting, forcePlay, fever.length]);
 
   if (!fever.length) return null;
 
+  // Arrows nudge the lane along without switching the auto-scroll off for
+  // good — only the Play/Pause button does that, which is what the control
+  // is there for.
   const move = (direction) => {
-    setPaused(true);
-    lane.current?.scrollBy({ left: direction * (lane.current.clientWidth * 0.85), behavior: window.matchMedia("(prefers-reduced-motion: reduce)").matches ? "auto" : "smooth" });
+    const el = lane.current;
+    if (!el) return;
+    const maximum = el.scrollWidth - el.clientWidth;
+    const target = Math.max(0, Math.min(maximum, el.scrollLeft + direction * el.clientWidth * 0.85));
+    tweenScroll(el, target);
   };
 
   return (
@@ -104,7 +145,13 @@ function FeverSpotlight({ tests, lab, slug, lang, picked, onToggle, onBook }) {
           <p>{te ? "జ్వర పరిశోధనల కోసం ప్రసిద్ధ టెస్టులు" : "Popular tests for fever investigations"}</p>
           <div className="lb-lane-controls">
             <button type="button" aria-label="Previous fever tests" onClick={() => move(-1)}>←</button>
-            <button type="button" onClick={() => setPaused(!paused)} aria-pressed={paused}>{paused ? (te ? "ప్లే" : "Play") : (te ? "పాజ్" : "Pause")}</button>
+            <button
+              type="button"
+              onClick={() => { if (paused) setForcePlay(true); setPaused(!paused); }}
+              aria-pressed={paused}
+            >
+              {paused ? (te ? "ప్లే" : "Play") : (te ? "పాజ్" : "Pause")}
+            </button>
             <button type="button" aria-label="Next fever tests" onClick={() => move(1)}>→</button>
           </div>
         </div>
@@ -115,7 +162,6 @@ function FeverSpotlight({ tests, lab, slug, lang, picked, onToggle, onBook }) {
           onMouseLeave={() => setInteracting(false)}
           onFocusCapture={() => setInteracting(true)}
           onBlurCapture={(e) => { if (!e.currentTarget.contains(e.relatedTarget)) setInteracting(false); }}
-          onPointerDown={() => setPaused(true)}
           tabIndex="0"
           aria-label="Fever tests; scroll for more"
         >
@@ -495,6 +541,15 @@ function BookingPageInner() {
       <div className="hero">
         <div className="wrap hero-flex">
         <div className="hero-copy">
+          <p className="hero-eyebrow">{[lab.city, te ? "మీ ఆరోగ్యం, ఒకే చోట" : "ONE PLACE FOR YOUR CARE"].filter(Boolean).join(" · ")}</p>
+          <h2 className="hero-headline">
+            {te ? <>డాక్టర్ లేదా ల్యాబ్ టెస్టు<br /><em>నిమిషంలో బుక్ చేయండి.</em></> : <>Book a doctor or a lab test<br /><em>in under a minute.</em></>}
+          </h2>
+          <p className="hero-sub">
+            {te
+              ? `${data.tests.length} టెస్టులు, ${data.packages.length} హెల్త్ చెకప్‌లు${lab.kind === "hospital" ? ", OPD అపాయింట్‌మెంట్లు" : ""} — వాట్సాప్‌లో నిర్ధారణ, ఆన్‌లైన్‌లో రిపోర్టులు.`
+              : `${data.tests.length} lab tests, ${data.packages.length} health checkups${lab.kind === "hospital" ? ", and OPD doctor appointments" : ""} — confirmed on WhatsApp, reports delivered online.`}
+          </p>
           <form
             className="hero-search-row"
             onSubmit={(e) => {
@@ -567,6 +622,12 @@ function BookingPageInner() {
               </Link>
             )}
           </div>
+          <ul className="hero-trust">
+            <li><strong>{data.tests.length}</strong><span>{te ? "ల్యాబ్ టెస్టులు" : "Lab tests"}</span></li>
+            <li><strong>{data.packages.length}</strong><span>{te ? "హెల్త్ చెకప్‌లు" : "Health checkups"}</span></li>
+            <li><strong>{te ? "అదే రోజు" : "Same day"}</strong><span>{te ? "రిపోర్టులు" : "Reports"}</span></li>
+            <li><strong>{te ? "వాట్సాప్" : "WhatsApp"}</strong><span>{te ? "నిర్ధారణ, రిమైండర్లు" : "Confirmations"}</span></li>
+          </ul>
         </div>
         <div className="hero-photo" aria-hidden="true">
           <img src="/images/home-collection-ai.png" alt="" width="640" height="480" loading="eager" fetchpriority="high" />
@@ -574,51 +635,39 @@ function BookingPageInner() {
         </div>
       </div>
 
-      {/* An "about" band using only facts that are actually true of this
-          lab right now — its own description, its real test/package
-          counts, its real phone and WhatsApp. No invented trust badges,
-          no stock photos of people, no numbers we can't back up — just
-          an original drawn illustration in the lab's own colour. */}
-      <section className="about-band">
-        <div className="wrap about-band-inner">
-          <div className="about-band-text">
-            <h2>{t.aboutHeading(lab.name)}</h2>
-            {lab.about && <p className="about-band-copy">{lab.about}</p>}
-            <div className="about-band-stats">
-              <div className="about-band-stat">
-                <strong>{data.tests.length}</strong>
-                <span>{t.aboutStatTests(data.tests.length)}</span>
-              </div>
-              {data.packages.length > 0 && (
-                <div className="about-band-stat">
-                  <strong>{data.packages.length}</strong>
-                  <span>{t.aboutStatPackages(data.packages.length)}</span>
-                </div>
-              )}
-            </div>
-            <div className="about-band-actions">
-              {lab.whatsapp && (
-                <a
-                  className="btn btn-primary"
-                  href={`https://wa.me/${lab.whatsapp}?text=${encodeURIComponent(
-                    `Hello ${lab.name}, I have a question.`
-                  )}`}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                >
-                  {t.aboutChat}
+      {/* The lab's own description, when it has written one. The test and
+          package counts that used to sit here now lead the hero, so this
+          band no longer repeats them. */}
+      {lab.about && (
+        <section className="about-band">
+          <div className="wrap about-band-inner">
+            <div className="about-band-text">
+              <h2>{t.aboutHeading(lab.name)}</h2>
+              <p className="about-band-copy">{lab.about}</p>
+              <div className="about-band-actions">
+                {lab.whatsapp && (
+                  <a
+                    className="btn btn-primary"
+                    href={`https://wa.me/${lab.whatsapp}?text=${encodeURIComponent(
+                      `Hello ${lab.name}, I have a question.`
+                    )}`}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                  >
+                    {t.aboutChat}
+                  </a>
+                )}
+                <a className="btn btn-ghost" href={`tel:${lab.phone.replace(/\s/g, "")}`}>
+                  {t.aboutCall}
                 </a>
-              )}
-              <a className="btn btn-ghost" href={`tel:${lab.phone.replace(/\s/g, "")}`}>
-                {t.aboutCall}
-              </a>
+              </div>
+            </div>
+            <div className="about-band-art">
+              <AboutIllustration />
             </div>
           </div>
-          <div className="about-band-art">
-            <AboutIllustration />
-          </div>
-        </div>
-      </section>
+        </section>
+      )}
 
       {/* "How we can help" — the real services this site offers, each going
           straight to the real thing, not a teaser for a page that doesn't
@@ -639,6 +688,49 @@ function BookingPageInner() {
           )}
           <Link to={`/${slug}/tests`}><span>{lab.kind === "hospital" ? "04" : "03"} / {lab.homeCollection ? (te ? "హోమ్ కలెక్షన్" : "HOME COLLECTION") : (te ? "బుకింగ్" : "BOOKING")}</span><h3>{lab.homeCollection ? (te ? "ఇంటికి దగ్గరగా సంరక్షణ" : "Care closer to home") : (te ? "మీ సందర్శనను ప్లాన్ చేయండి" : "Plan your visit")}</h3><p>{lab.homeCollection ? (te ? "అర్హత ఉన్న టెస్టులకు బుకింగ్ ఫారమ్‌లో హోమ్ కలెక్షన్ ఎంచుకోండి." : "Choose home collection in the booking form for eligible tests.") : (te ? "మీ వివరాలు, అందుబాటులోని తేదీ, సమయాన్ని ఎంచుకోండి." : "Fill in your details and pick an available date and time.")}</p><b>{lab.homeCollection ? (te ? "కలెక్షన్ ఎంచుకోండి →" : "Choose collection →") : (te ? "బుకింగ్‌కు వెళ్లండి →" : "Go to booking →")}</b></Link>
           <Link to={`/${slug}/check`}><span>{lab.kind === "hospital" ? "05" : "04"} / {te ? "మీ రిపోర్టులు" : "YOUR REPORTS"}</span><h3>{te ? "మీ బుకింగ్‌ను అనుసరించండి" : "Keep up with your booking"}</h3><p>{te ? "పురోగతి, విడుదలైన రిపోర్టులను చూడటానికి బుకింగ్ రిఫరెన్స్ వాడండి." : "Use your booking reference to check progress and released reports."}</p><b>{te ? "మీ బుకింగ్‌ను ట్రాక్ చేయండి →" : "Track your booking →"}</b></Link>
+        </div>
+      </section>
+
+      {/* What happens after a booking — the WhatsApp confirmations, reminders,
+          report delivery and staff alerts this system already does. Without
+          this band none of that work is visible to a visitor. */}
+      <section className="wrap lb-flow" aria-labelledby="flow-title">
+        <div className="lb-section-heading">
+          <div>
+            <p className="lb-eyebrow">{te ? "బుక్ చేసిన తర్వాత" : "AFTER YOU BOOK"}</p>
+            <h2 id="flow-title">{te ? "మిగతాదంతా మేం చూసుకుంటాం" : "The rest is handled for you"}</h2>
+          </div>
+          <p>{te ? "ప్రతి అడుగులో మీకు సమాచారం అందుతుంది." : "You hear from us at every step — no chasing, no guesswork."}</p>
+        </div>
+        <div className="lb-flow-grid">
+          <div className="lb-flow-card">
+            <span className="lb-flow-icon lb-flow-icon-wa" aria-hidden="true">
+              <svg width="22" height="22" viewBox="0 0 24 24" fill="#fff"><path d="M12 2a10 10 0 0 0-8.6 15.1L2 22l5-1.4A10 10 0 1 0 12 2Zm5.6 14.2c-.2.6-1.3 1.2-1.9 1.3-.5.1-1.1.1-1.8-.1-.4-.1-1-.3-1.6-.6-2.9-1.2-4.7-4.1-4.9-4.3-.1-.2-1.2-1.6-1.2-3s.7-2.1 1-2.4c.3-.3.6-.3.8-.3h.6c.2 0 .4 0 .6.5.2.6.7 1.9.8 2 .1.2.1.4 0 .6-.1.2-.1.3-.3.5l-.4.5c-.1.2-.3.3-.1.6.2.3.9 1.4 1.8 2.3 1.3 1.1 2.3 1.5 2.6 1.7.3.2.5.1.7-.1l.7-.8c.2-.3.4-.2.7-.1l1.8.9c.2.1.4.2.5.3.1.2.1.9-.1 1.5Z" /></svg>
+            </span>
+            <h3>{te ? "వెంటనే వాట్సాప్ నిర్ధారణ" : "Instant WhatsApp confirmation"}</h3>
+            <p>{te ? "బుక్ చేసిన క్షణమే మీ రిఫరెన్స్, సమయం వాట్సాప్‌లో వస్తాయి." : "Your reference number and slot reach your phone the moment you book."}</p>
+          </div>
+          <div className="lb-flow-card">
+            <span className="lb-flow-icon lb-flow-icon-bell" aria-hidden="true">
+              <svg width="22" height="22" viewBox="0 0 24 24" fill="#fff"><path d="M12 22a2.2 2.2 0 0 0 2.2-2.2H9.8A2.2 2.2 0 0 0 12 22Zm6.5-5.3v-5.2c0-3.2-1.7-5.8-4.6-6.5V4a1.9 1.9 0 1 0-3.8 0v1c-3 .7-4.6 3.3-4.6 6.5v5.2L4 18.2v.9h16v-.9l-1.5-1.5Z" /></svg>
+            </span>
+            <h3>{te ? "సమయానికి రిమైండర్లు" : "Reminders before your visit"}</h3>
+            <p>{te ? "ముందు రోజు రిమైండర్, అవసరమైతే ఉపవాస రిమైండర్ కూడా." : "A day-before reminder, plus a fasting reminder when your test needs one."}</p>
+          </div>
+          <div className="lb-flow-card">
+            <span className="lb-flow-icon lb-flow-icon-report" aria-hidden="true">
+              <svg width="22" height="22" viewBox="0 0 24 24" fill="#fff"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8l-6-6Zm-1 7V3.5L18.5 9H13ZM8 13h8v1.6H8V13Zm0 3.4h8V18H8v-1.6Z" /></svg>
+            </span>
+            <h3>{te ? "రిపోర్టులు ఆన్‌లైన్‌లో" : "Reports, online"}</h3>
+            <p>{te ? "రిపోర్ట్ విడుదలైన వెంటనే రిఫరెన్స్‌తో చూడండి, డౌన్‌లోడ్ చేయండి." : "Released reports appear against your reference — view, download, or get them on WhatsApp."}</p>
+          </div>
+          <div className="lb-flow-card">
+            <span className="lb-flow-icon lb-flow-icon-team" aria-hidden="true">
+              <svg width="22" height="22" viewBox="0 0 24 24" fill="#fff"><path d="M16 11a3.5 3.5 0 1 0-3.5-3.5A3.5 3.5 0 0 0 16 11Zm-8 0a3.5 3.5 0 1 0-3.5-3.5A3.5 3.5 0 0 0 8 11Zm0 2c-2.7 0-8 1.3-8 4v3h10v-3c0-1 .4-2.6 2.2-3.7A14.6 14.6 0 0 0 8 13Zm8 0c-.6 0-1.3.1-2 .2 1.3 1 2 2.2 2 3.8v3h8v-3c0-2.7-5.3-4-8-4Z" /></svg>
+            </span>
+            <h3>{te ? "బృందానికి తక్షణ అలర్ట్" : "The team is alerted instantly"}</h3>
+            <p>{te ? "ప్రతి బుకింగ్, అపాయింట్‌మెంట్ వెంటనే సిబ్బందికి చేరుతుంది — ఏదీ మిస్ కాదు." : "Every booking and appointment reaches the front desk straight away, so nothing is missed."}</p>
+          </div>
         </div>
       </section>
 
