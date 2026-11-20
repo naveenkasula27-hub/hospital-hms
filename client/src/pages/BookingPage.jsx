@@ -21,8 +21,8 @@ import CareBenefits from "../components/CareBenefits.jsx";
 import BookingFAQ from "../components/BookingFAQ.jsx";
 import { LangProvider, useLang } from "../lib/i18n.jsx";
 import { EXPERIENCE } from "../lib/experience.js";
-import CATEGORY_PHOTOS from "../lib/categoryPhotos.jsx";
 import CategoryIcon from "../lib/categoryIcons.jsx";
+import TEST_ICONS from "../lib/testIcons.js";
 import "../experience.css";
 import "../services.css";
 
@@ -62,7 +62,7 @@ function FeverSpotlight({ tests, lab, picked, onToggle, onBook }) {
   return (
     <section className="lb-fever" aria-labelledby="fever-heading">
       <div className="lb-fever-intro">
-        {CATEGORY_PHOTOS.Fever ? <img src={CATEGORY_PHOTOS.Fever} width="180" height="180" loading="lazy" alt="" /> : <CategoryIcon category="Fever" size={60} />}
+        {TEST_ICONS.Fever ? <img src={TEST_ICONS.Fever} width="180" height="180" loading="lazy" alt="" /> : <CategoryIcon category="Fever" size={60} />}
         <p className="lb-eyebrow">WHEN YOU NEED A CLOSER LOOK</p>
         <h2 id="fever-heading">Fever tests,<br />easy to find.</h2>
         <p>Find the test your clinician has advised and check the preparation details.</p>
@@ -598,7 +598,7 @@ function BookingPageInner() {
                 href="#tests"
                 onClick={() => setCategory(name)}
               >
-                {CATEGORY_PHOTOS[name] ? <img src={CATEGORY_PHOTOS[name]} loading="lazy" alt="" /> : <CategoryIcon category={name} size={40} />}
+                {TEST_ICONS[name] ? <img src={TEST_ICONS[name]} loading="lazy" alt="" /> : <CategoryIcon category={name} size={40} />}
                 <span>{name}</span>
               </a>
             ))}
