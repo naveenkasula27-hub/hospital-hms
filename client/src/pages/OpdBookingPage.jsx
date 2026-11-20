@@ -35,6 +35,35 @@ function addDays(dateStr, n) {
   return new Date(Date.UTC(y, m - 1, d) + n * 86400000).toISOString().slice(0, 10);
 }
 
+/** The pieces a date card shows: "Sat / 22 / Nov". */
+function dayParts(dateStr) {
+  const dt = new Date(`${dateStr}T12:00:00Z`);
+  return {
+    dow: DAY_SHORT[dt.getUTCDay()],
+    num: dt.getUTCDate(),
+    mon: dt.toLocaleString("en-GB", { month: "short", timeZone: "UTC" }),
+  };
+}
+
+/**
+ * Splits a day's free slots into the parts of the day people actually think
+ * in. A long single row of times is hard to scan and hides how much is left
+ * in the part of the day someone can actually come in.
+ */
+function groupSlots(times) {
+  const groups = [
+    { label: "Morning", items: [] },
+    { label: "Afternoon", items: [] },
+    { label: "Evening", items: [] },
+  ];
+  for (const slot of times) {
+    const hour = Number(String(slot.time).slice(0, 2));
+    const index = hour < 12 ? 0 : hour < 16 ? 1 : 2;
+    groups[index].items.push(slot);
+  }
+  return groups.filter((g) => g.items.length);
+}
+
 export default function OpdBookingPage() {
   const { slug } = useParams();
   const [info, setInfo] = useState(null);
@@ -59,6 +88,17 @@ export default function OpdBookingPage() {
     if (unsureOpen && !dialog.open) dialog.showModal();
     if (!unsureOpen && dialog.open) dialog.close();
   }, [unsureOpen]);
+
+  // Choosing a doctor opens the whole booking flow in one panel, instead of
+  // unrolling a thin row of date chips further down the page.
+  const [bookingOpen, setBookingOpen] = useState(false);
+  const bookingDialog = useRef(null);
+  useEffect(() => {
+    const dialog = bookingDialog.current;
+    if (!dialog) return;
+    if (bookingOpen && !dialog.open) dialog.showModal();
+    if (!bookingOpen && dialog.open) dialog.close();
+  }, [bookingOpen]);
 
   useEffect(() => {
     call(`/public/${slug}/opd`)
@@ -97,7 +137,9 @@ export default function OpdBookingPage() {
   function pickDoctor(d) {
     setDoctor(d);
     setDate("");
+    setTime("");
     setError(null);
+    setBookingOpen(true);
   }
 
   async function submit(e) {
@@ -111,7 +153,8 @@ export default function OpdBookingPage() {
         body: JSON.stringify({ ...form, doctor: doctor._id, date, time }),
       });
       setDone(r);
-      window.scrollTo({ top: 0, behavior: "smooth" });
+      setBookingOpen(false);
+      window.scrollTo({ top: 0 });
     } catch (err) {
       setError({ message: err.message, field: err.field });
       if (err.field === "time") {
@@ -212,33 +255,98 @@ export default function OpdBookingPage() {
               )}
             </section>
 
-            {doctor && (
-              <section className="card">
-                <h3 className="opd-step"><span>2</span> Choose a day and time</h3>
-                <div className="chips" role="group" aria-label="Date">
-                  {dates.map((d) => (
-                    <button key={d} type="button" className="chip" aria-pressed={date === d} onClick={() => setDate(d)}>
-                      {d === info.today ? "Today" : prettyDate(d, h)}
-                    </button>
-                  ))}
+          </>
+        )}
+
+        <section className="lb-faq" aria-labelledby="opd-faq-title">
+          <div>
+            <p className="lb-eyebrow">{h.name}</p>
+            <h2 id="opd-faq-title">A few questions, made simple.</h2>
+            <p>The practical details you need before you book a doctor.</p>
+          </div>
+          <div>
+            {OPD_FAQ.map(([q, a]) => (
+              <details key={q}>
+                <summary>{q}</summary>
+                <p>{a}</p>
+              </details>
+            ))}
+          </div>
+        </section>
+
+        <p className="muted tiny" style={{ textAlign: "center" }}>
+          Need a lab test instead? <Link to={`/${slug}`}>Book a lab test</Link>
+        </p>
+      </main>
+
+      <dialog
+        ref={bookingDialog}
+        className="opd-book-dialog"
+        aria-labelledby="opd-book-title"
+        onCancel={(e) => { e.preventDefault(); setBookingOpen(false); }}
+        onClick={(e) => { if (e.target === e.currentTarget) setBookingOpen(false); }}
+      >
+        <button type="button" className="lb-dialog-close" onClick={() => setBookingOpen(false)} aria-label="Close">×</button>
+        {doctor && (
+          <>
+            <header className="opd-book-head">
+              <span className="opd-doc-avatar">{initials(doctor.name)}</span>
+              <div>
+                <h2 id="opd-book-title">{doctor.name}</h2>
+                <p className="opd-book-specialty">{doctor.specialty}{doctor.qualification ? ` · ${doctor.qualification}` : ""}</p>
+                <p className="opd-book-fee">{money(doctor.consultFee, h)} <span>consultation, paid at reception</span></p>
+              </div>
+            </header>
+
+            <section className="opd-book-step">
+              <h3><span>1</span> Pick a date</h3>
+              {dates.length === 0 ? (
+                <p className="muted small">This doctor has no open days in the next two weeks. Please call {h.phone}.</p>
+              ) : (
+                <div className="opd-date-grid" role="group" aria-label="Date">
+                  {dates.map((d) => {
+                    const p = dayParts(d);
+                    return (
+                      <button key={d} type="button" className="opd-date-card" aria-pressed={date === d} onClick={() => setDate(d)}>
+                        <span className="opd-date-dow">{d === info.today ? "Today" : p.dow}</span>
+                        <span className="opd-date-num">{p.num}</span>
+                        <span className="opd-date-mon">{p.mon}</span>
+                      </button>
+                    );
+                  })}
                 </div>
-                {date && (
-                  !slots ? <div className="skeleton" style={{ height: 44, marginTop: 10 }} /> :
-                  slots.error ? <p className="err">{slots.error}</p> :
-                  slots.times.every((t) => !t.free) ? <p className="muted small">No times left on this day. Try another day.</p> : (
-                    <div className="slots" style={{ marginTop: 10 }}>
-                      {slots.times.filter((t) => t.free).map((t) => (
-                        <button key={t.time} type="button" className="slot" aria-pressed={time === t.time} onClick={() => setTime(t.time)}>{time12(t.time)}</button>
-                      ))}
+              )}
+            </section>
+
+            {date && (
+              <section className="opd-book-step">
+                <h3><span>2</span> Pick a time</h3>
+                {!slots ? (
+                  <div className="skeleton" style={{ height: 64 }} />
+                ) : slots.error ? (
+                  <p className="err">{slots.error}</p>
+                ) : slots.times.every((t) => !t.free) ? (
+                  <p className="muted small">No times left on this day. Try another date above.</p>
+                ) : (
+                  groupSlots(slots.times.filter((t) => t.free)).map((group) => (
+                    <div className="opd-slot-group" key={group.label}>
+                      <p className="opd-slot-label">{group.label} <span>{group.items.length} available</span></p>
+                      <div className="opd-slot-grid">
+                        {group.items.map((t) => (
+                          <button key={t.time} type="button" className="opd-slot" aria-pressed={time === t.time} onClick={() => setTime(t.time)}>
+                            {time12(t.time)}
+                          </button>
+                        ))}
+                      </div>
                     </div>
-                  )
+                  ))
                 )}
               </section>
             )}
 
-            {doctor && time && (
-              <section className="card">
-                <h3 className="opd-step"><span>3</span> Patient details</h3>
+            {time && (
+              <section className="opd-book-step">
+                <h3><span>3</span> Patient details</h3>
                 <form className="form" onSubmit={submit} noValidate>
                   {error && <div className="notice notice-bad" role="alert">{error.message}</div>}
                   <div>
@@ -270,34 +378,14 @@ export default function OpdBookingPage() {
                     <span className="small">The hospital may contact me on this number about this appointment.</span>
                   </label>
                   <button className="btn btn-primary btn-block" type="submit" disabled={busy}>
-                    {busy ? "Booking…" : `Book ${time12(time)}, ${prettyDate(date, h)}`}
+                    {busy ? "Booking…" : `Confirm ${time12(time)}, ${prettyDate(date, h)}`}
                   </button>
                 </form>
               </section>
             )}
           </>
         )}
-
-        <section className="lb-faq" aria-labelledby="opd-faq-title">
-          <div>
-            <p className="lb-eyebrow">{h.name}</p>
-            <h2 id="opd-faq-title">A few questions, made simple.</h2>
-            <p>The practical details you need before you book a doctor.</p>
-          </div>
-          <div>
-            {OPD_FAQ.map(([q, a]) => (
-              <details key={q}>
-                <summary>{q}</summary>
-                <p>{a}</p>
-              </details>
-            ))}
-          </div>
-        </section>
-
-        <p className="muted tiny" style={{ textAlign: "center" }}>
-          Need a lab test instead? <Link to={`/${slug}`}>Book a lab test</Link>
-        </p>
-      </main>
+      </dialog>
 
       <dialog
         ref={unsureDialog}
