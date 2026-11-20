@@ -25,6 +25,7 @@ import { LangProvider, useLang } from "../lib/i18n.jsx";
 import { EXPERIENCE } from "../lib/experience.js";
 import CategoryIcon from "../lib/categoryIcons.jsx";
 import TEST_ICONS from "../lib/testIcons.js";
+import feverSymptomPhoto from "../assets/test-icons/fever-symptom.webp";
 import "../storefront.css";
 import "../experience.css";
 import "../services.css";
@@ -135,7 +136,7 @@ function FeverSpotlight({ tests, lab, slug, lang, picked, onToggle, onBook }) {
   return (
     <section className="lb-fever" aria-labelledby="fever-heading">
       <div className="lb-fever-intro">
-        {TEST_ICONS.Fever ? <img src={TEST_ICONS.Fever} width="180" height="180" loading="lazy" alt="" /> : <CategoryIcon category="Fever" size={60} />}
+        <img className="lb-fever-intro-photo" src={feverSymptomPhoto} width="180" height="180" loading="lazy" alt="" />
         <p className="lb-eyebrow">{te ? "మరింత స్పష్టత కావాలా" : "WHEN YOU NEED A CLOSER LOOK"}</p>
         <h2 id="fever-heading">{te ? <>జ్వర టెస్టులు,<br />సులభంగా కనుగొనండి.</> : <>Fever tests,<br />easy to find.</>}</h2>
         <p>{te ? "మీ డాక్టర్ సూచించిన టెస్టును కనుగొని సన్నాహాల వివరాలను చూడండి." : "Find the test your clinician has advised and check the preparation details."}</p>
@@ -267,6 +268,20 @@ function BookingPageInner() {
   const [data, setData] = useState(null);
   const [loadError, setLoadError] = useState("");
   const [bookingOpen, setBookingOpen] = useState(false);
+
+  // "Request a callback" — a lightweight ask-for-help dialog on the
+  // homepage, the same pattern as the appointment page's "still unsure"
+  // box: no booking backend involved, it just hands the details to
+  // WhatsApp so the lab's own team follows up.
+  const [callbackOpen, setCallbackOpen] = useState(false);
+  const [callbackForm, setCallbackForm] = useState({ name: "", phone: "", preferredDate: "", preferredTime: "", message: "" });
+  const callbackDialog = useRef(null);
+  useEffect(() => {
+    const dialog = callbackDialog.current;
+    if (!dialog) return;
+    if (callbackOpen && !dialog.open) dialog.showModal();
+    if (!callbackOpen && dialog.open) dialog.close();
+  }, [callbackOpen]);
 
   // What the patient has picked
   const [picked, setPicked] = useState({ tests: new Set(), packages: new Set() });
@@ -709,13 +724,18 @@ function BookingPageInner() {
 
       {/* The lab's own description, when it has written one. The test and
           package counts that used to sit here now lead the hero, so this
-          band no longer repeats them. */}
-      {lab.about && (
-        <section className="about-band">
+          band no longer repeats them. The illustration always renders, even
+          with no "about" text written yet, so this section is never just an
+          empty gap on the page. */}
+      <section className="about-band">
           <div className="wrap about-band-inner">
             <div className="about-band-text">
               <h2>{t.aboutHeading(lab.name)}</h2>
-              <p className="about-band-copy">{lab.about}</p>
+              <p className="about-band-copy">
+                {lab.about || (te
+                  ? `${lab.name} రోగ నిర్ధారణ, డాక్టర్ సంప్రదింపులు, ఫార్మసీని ఒకే చోట అందిస్తుంది — మీ బుకింగ్, రిపోర్ట్ అంతా ఒకే రిఫరెన్స్‌తో.`
+                  : `${lab.name} brings diagnostics, doctor consultations and pharmacy together in one place — your booking, visit and report all tracked under one reference.`)}
+              </p>
               <div className="about-band-actions">
                 {lab.whatsapp && (
                   <a
@@ -739,7 +759,6 @@ function BookingPageInner() {
             </div>
           </div>
         </section>
-      )}
 
       {/* "How we can help" — the real services this site offers, each going
           straight to the real thing, not a teaser for a page that doesn't
@@ -761,6 +780,10 @@ function BookingPageInner() {
           <Link to={`/${slug}/tests`}><span>{lab.kind === "hospital" ? "04" : "03"} / {lab.homeCollection ? (te ? "హోమ్ కలెక్షన్" : "HOME COLLECTION") : (te ? "బుకింగ్" : "BOOKING")}</span><h3>{lab.homeCollection ? (te ? "ఇంటికి దగ్గరగా సంరక్షణ" : "Care closer to home") : (te ? "మీ సందర్శనను ప్లాన్ చేయండి" : "Plan your visit")}</h3><p>{lab.homeCollection ? (te ? "అర్హత ఉన్న టెస్టులకు బుకింగ్ ఫారమ్‌లో హోమ్ కలెక్షన్ ఎంచుకోండి." : "Choose home collection in the booking form for eligible tests.") : (te ? "మీ వివరాలు, అందుబాటులోని తేదీ, సమయాన్ని ఎంచుకోండి." : "Fill in your details and pick an available date and time.")}</p><b>{lab.homeCollection ? (te ? "కలెక్షన్ ఎంచుకోండి →" : "Choose collection →") : (te ? "బుకింగ్‌కు వెళ్లండి →" : "Go to booking →")}</b></Link>
           <Link to={`/${slug}/check`}><span>{lab.kind === "hospital" ? "05" : "04"} / {te ? "మీ రిపోర్టులు" : "YOUR REPORTS"}</span><h3>{te ? "మీ బుకింగ్‌ను అనుసరించండి" : "Keep up with your booking"}</h3><p>{te ? "పురోగతి, విడుదలైన రిపోర్టులను చూడటానికి బుకింగ్ రిఫరెన్స్ వాడండి." : "Use your booking reference to check progress and released reports."}</p><b>{te ? "మీ బుకింగ్‌ను ట్రాక్ చేయండి →" : "Track your booking →"}</b></Link>
         </div>
+        <button type="button" className="lb-callback-prompt" onClick={() => setCallbackOpen(true)}>
+          <strong>{te ? "ఏది ఎంచుకోవాలో తెలియటం లేదా?" : "Not sure what you need?"}</strong>
+          <span>{te ? "మీ వివరాలు ఇవ్వండి, ల్యాబ్ బృందం మీకు సహాయం చేస్తుంది." : "Share your details and the team will call you back to help."}</span>
+        </button>
       </section>
 
       {/* What happens after a booking — the WhatsApp confirmations, reminders,
@@ -960,6 +983,62 @@ function BookingPageInner() {
           onSubmit={submit}
         />
       </BookingDialog>
+
+      <dialog
+        ref={callbackDialog}
+        className="lb-callback-dialog"
+        aria-labelledby="callback-title"
+        onCancel={(e) => { e.preventDefault(); setCallbackOpen(false); }}
+        onClick={(e) => { if (e.target === e.currentTarget) setCallbackOpen(false); }}
+      >
+        <button type="button" className="lb-dialog-close" onClick={() => setCallbackOpen(false)} aria-label="Close">×</button>
+        <header>
+          <p className="lb-eyebrow">{lab.name}</p>
+          <h2 id="callback-title">{te ? "సహాయం కోరండి" : "Request a callback"}</h2>
+          <p>{te ? "కొన్ని వివరాలు ఇవ్వండి, ల్యాబ్ బృందం మీకు తిరిగి కాల్ చేసి సహాయం చేస్తుంది." : "Share a few details and the team will call you back to help with your booking."}</p>
+        </header>
+        <form
+          className="lb-request-form"
+          onSubmit={(e) => {
+            e.preventDefault();
+            const f = callbackForm;
+            const lines = [
+              `Hello ${lab.name}, I'd like some help with a booking.`,
+              `Name: ${f.name}`,
+              `Phone: ${f.phone}`,
+              f.preferredDate ? `Preferred date: ${f.preferredDate}` : "",
+              f.preferredTime ? `Preferred time: ${f.preferredTime}` : "",
+              f.message ? `Message: ${f.message}` : "",
+            ].filter(Boolean);
+            if (lab.whatsapp) {
+              window.open(`https://wa.me/${lab.whatsapp}?text=${encodeURIComponent(lines.join("\n"))}`, "_blank", "noopener");
+            } else {
+              window.location.href = `tel:${lab.phone.replace(/\s/g, "")}`;
+            }
+            setCallbackOpen(false);
+            setCallbackForm({ name: "", phone: "", preferredDate: "", preferredTime: "", message: "" });
+          }}
+        >
+          <div className="lb-request-fields">
+            <label htmlFor="cb-name">{te ? "పూర్తి పేరు" : "Full name"}*
+              <input id="cb-name" required minLength={2} maxLength={80} value={callbackForm.name} onChange={(e) => setCallbackForm((f) => ({ ...f, name: e.target.value }))} />
+            </label>
+            <label htmlFor="cb-phone">{te ? "ఫోన్ నంబర్" : "Phone number"}*
+              <input id="cb-phone" type="tel" required minLength={6} maxLength={30} value={callbackForm.phone} onChange={(e) => setCallbackForm((f) => ({ ...f, phone: e.target.value }))} />
+            </label>
+            <label htmlFor="cb-date">{te ? "అనుకూలమైన తేదీ (ఐచ్ఛికం)" : "Preferred date (optional)"}
+              <input id="cb-date" type="date" value={callbackForm.preferredDate} onChange={(e) => setCallbackForm((f) => ({ ...f, preferredDate: e.target.value }))} />
+            </label>
+            <label htmlFor="cb-time">{te ? "అనుకూలమైన సమయం (ఐచ్ఛికం)" : "Preferred time (optional)"}
+              <input id="cb-time" type="time" value={callbackForm.preferredTime} onChange={(e) => setCallbackForm((f) => ({ ...f, preferredTime: e.target.value }))} />
+            </label>
+          </div>
+          <label className="lb-callback-message" htmlFor="cb-message">{te ? "సందేశం (ఐచ్ఛికం)" : "Message (optional)"}
+            <textarea id="cb-message" rows={3} maxLength={300} placeholder={te ? "ఉదా. హోమ్ కలెక్షన్ ఎంచుకోవడంలో సహాయం కావాలి" : "e.g. help choosing a home collection slot"} value={callbackForm.message} onChange={(e) => setCallbackForm((f) => ({ ...f, message: e.target.value }))} />
+          </label>
+          <button type="submit" className="lb-request-submit">{te ? "సహాయం కోరండి" : "Request help"}</button>
+        </form>
+      </dialog>
 
       {pickedCount > 0 && !confirmed && (
         <div className="bar">
