@@ -65,11 +65,52 @@ function tweenScroll(el, target, duration = 420) {
   requestAnimationFrame(step);
 }
 
+/**
+ * Click-and-drag scrolling for a horizontal lane. A plain `overflow-x: auto`
+ * element only responds to touch, trackpad or the scrollwheel — a mouse
+ * click-and-drag does nothing by default in any browser, which made a
+ * carousel with only a subtle auto-scroll feel completely unresponsive to
+ * anyone testing it with a mouse. Returns an onPointerDown handler; attach
+ * it to the scrolling element itself.
+ */
+function useDragScroll(ref, onDragChange) {
+  return (down) => {
+    const el = ref.current;
+    if (!el || down.button !== 0) return;
+    const startX = down.clientX;
+    const startScroll = el.scrollLeft;
+    let moved = false;
+    el.setPointerCapture(down.pointerId);
+    onDragChange?.(true);
+    const onMove = (move) => {
+      const dx = move.clientX - startX;
+      if (Math.abs(dx) > 3) moved = true;
+      el.scrollLeft = startScroll - dx;
+    };
+    const onUp = () => {
+      el.removeEventListener("pointermove", onMove);
+      el.removeEventListener("pointerup", onUp);
+      el.removeEventListener("pointercancel", onUp);
+      onDragChange?.(false);
+      if (moved) {
+        // Swallow the click that would otherwise fire on whatever the
+        // pointer lands on — a drag was never meant to "Add" a test.
+        const swallow = (e) => { e.stopPropagation(); e.preventDefault(); };
+        el.addEventListener("click", swallow, { capture: true, once: true });
+      }
+    };
+    el.addEventListener("pointermove", onMove);
+    el.addEventListener("pointerup", onUp);
+    el.addEventListener("pointercancel", onUp);
+  };
+}
+
 function FeverSpotlight({ tests, lab, slug, lang, picked, onToggle, onBook }) {
   const te = lang === "te";
   const lane = useRef(null);
   const [paused, setPaused] = useState(false);
   const [interacting, setInteracting] = useState(false);
+  const dragStart = useDragScroll(lane, setInteracting);
   const fever = tests.filter((test) => test.category === "Fever");
 
   useEffect(() => {
@@ -160,12 +201,13 @@ function FeverSpotlight({ tests, lab, slug, lang, picked, onToggle, onBook }) {
         <ul
           className="lb-fever-lane"
           ref={lane}
+          onPointerDown={dragStart}
           onMouseEnter={() => setInteracting(true)}
           onMouseLeave={() => setInteracting(false)}
           onFocusCapture={() => setInteracting(true)}
           onBlurCapture={(e) => { if (!e.currentTarget.contains(e.relatedTarget)) setInteracting(false); }}
           tabIndex="0"
-          aria-label="Fever tests; scroll for more"
+          aria-label="Fever tests; scroll, or click and drag, for more"
         >
           {fever.map((test) => (
             <li className="lb-fever-card" key={test.code}>
@@ -202,6 +244,7 @@ function DoctorsCarousel({ doctors, lab, slug, lang }) {
   const lane = useRef(null);
   const [paused, setPaused] = useState(false);
   const [interacting, setInteracting] = useState(false);
+  const dragStart = useDragScroll(lane, setInteracting);
 
   useEffect(() => {
     // See the matching note on FeverSpotlight's effect — same reasoning for
@@ -276,12 +319,13 @@ function DoctorsCarousel({ doctors, lab, slug, lang }) {
       <ul
         className="lb-doctor-lane"
         ref={lane}
+        onPointerDown={dragStart}
         onMouseEnter={() => setInteracting(true)}
         onMouseLeave={() => setInteracting(false)}
         onFocusCapture={() => setInteracting(true)}
         onBlurCapture={(e) => { if (!e.currentTarget.contains(e.relatedTarget)) setInteracting(false); }}
         tabIndex="0"
-        aria-label="Our doctors; scroll for more">
+        aria-label="Our doctors; scroll, or click and drag, for more">
         {doctors.map((d) => (
           <li className="lb-doctor-card" key={d._id}>
             <span className="lb-doctor-avatar">{initials(d.name)}</span>
