@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- Replace REPLACE-WITH-YOUR-DOMAIN.vercel.app below with your real live domain once deployed. -->
+<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
+  <url><loc>https://REPLACE-WITH-YOUR-DOMAIN.vercel.app/np</loc></url>
+  <url><loc>https://REPLACE-WITH-YOUR-DOMAIN.vercel.app/np/about</loc></url>
+  <url><loc>https://REPLACE-WITH-YOUR-DOMAIN.vercel.app/np/treatments</loc></url>
+  <url><loc>https://REPLACE-WITH-YOUR-DOMAIN.vercel.app/np/gallery</loc></url>
+  <url><loc>https://REPLACE-WITH-YOUR-DOMAIN.vercel.app/np/contact</loc></url>
+  <url><loc>https://REPLACE-WITH-YOUR-DOMAIN.vercel.app/np/tests</loc></url>
+  <url><loc>https://REPLACE-WITH-YOUR-DOMAIN.vercel.app/np/checkups</loc></url>
+  <url><loc>https://REPLACE-WITH-YOUR-DOMAIN.vercel.app/np/appointment</loc></url>
+  <url><loc>https://REPLACE-WITH-YOUR-DOMAIN.vercel.app/privacy</loc></url>
+  <url><loc>https://REPLACE-WITH-YOUR-DOMAIN.vercel.app/terms</loc></url>
+</urlset>

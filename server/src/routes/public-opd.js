@@ -12,7 +12,7 @@ import { normalisePhone, looksLikeMobile } from "../lib/phone.js";
 import { todayInZone, isValidDateStr, addDays } from "../lib/dates.js";
 import { availability, createAppointment, doctorTimes, minutesNowInZone, worksOn } from "../lib/opd.js";
 import { makeUhid } from "./hms-patients.js";
-import { confirmOpdAppointment } from "../services/whatsapp.js";
+import { confirmOpdAppointment, notifyLabOfOpdBooking } from "../services/whatsapp.js";
 import { config } from "../config.js";
 
 export const publicOpdRouter = createRouter();
@@ -134,6 +134,7 @@ publicOpdRouter.post("/:slug/opd/book", bookingLimiter, loadHospital, async (req
   if (taken) return res.status(409).json({ error: "That time was just taken. Pick another.", field: "time" });
 
   confirmOpdAppointment(lab, appt, patient, doctor).catch((err) => console.error("OPD confirmation:", err.message));
+  notifyLabOfOpdBooking(lab, appt, patient, doctor).catch((err) => console.error("OPD front-desk alert:", err.message));
 
   res.status(201).json({
     reference: appt.reference,

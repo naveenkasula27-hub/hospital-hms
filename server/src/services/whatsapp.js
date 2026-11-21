@@ -269,6 +269,26 @@ export async function confirmOpdAppointment(lab, appt, patient, doctor) {
 }
 
 /**
+ * Front-desk alert for a new OPD booking — the counterpart to
+ * notifyLabOfBooking() for lab tests. Same seven slots as
+ * NEW_BOOKING_ALERT_TEMPLATE: {{1}} lab name, {{2}} patient name, {{3}} age,
+ * {{4}} gender, {{5}} patient phone, {{6}} what was booked, {{7}} when —
+ * so it reuses that same approved template rather than needing a new one.
+ */
+export async function notifyLabOfOpdBooking(lab, appt, patient, doctor) {
+  if (!lab.whatsapp || !lab.notify?.whatsappOnBooking) return { skipped: true };
+  return sendTemplate(lab.whatsapp, NEW_BOOKING_ALERT_TEMPLATE, TEMPLATE_LANG, [
+    param(lab.name),
+    param(patient.name),
+    param(patient.age),
+    param(patient.gender),
+    param(patient.phone),
+    param(`Appointment — ${doctorOf(doctor)}, token #${appt.token}`),
+    param(whenOf(appt)),
+  ]);
+}
+
+/**
  * Day-before reminder for a doctor's appointment. Five slots: {{1}} hospital,
  * {{2}} doctor, {{3}} date and time, {{4}} token, {{5}} hospital phone.
  */

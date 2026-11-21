@@ -791,7 +791,7 @@ function BookingPageInner() {
           </ul>
         </div>
         <div className="hero-photo" aria-hidden="true">
-          <img src="/images/home-collection-ai.png" alt="" width="640" height="480" loading="eager" fetchpriority="high" />
+          <img src="/images/home-collection-ai.webp" alt="" width="640" height="480" loading="eager" fetchpriority="high" />
         </div>
         </div>
       </div>
