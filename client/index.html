@@ -12,15 +12,28 @@
     <meta property="og:description" content="Book blood tests and health checkups, or a doctor's appointment. Sample at the lab or at your home." />
     <meta property="og:image" content="/images/home-collection-ai.webp" />
 
+    <!-- The homepage hero photo is the largest thing painted in the first
+         second (the LCP candidate) — preloading it lets the browser start
+         fetching it immediately, in parallel with the JS bundle, instead of
+         waiting for React to render the <img> tag before even discovering it. -->
+    <link rel="preload" as="image" href="/images/home-collection-ai.webp" />
+
     <!-- Poppins for headings, Lato for reading. Preconnect first so the fonts
          start downloading before the stylesheet is parsed, which matters on a
-         phone on mobile data. -->
+         phone on mobile data. Loaded non-blocking (media="print" trick) so a
+         slow Google Fonts round trip never delays first paint of the page
+         itself — the fallback system font shows immediately and swaps in. -->
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
     <link
       href="https://fonts.googleapis.com/css2?family=Poppins:wght@500;600;700&family=Lato:wght@400;700&display=swap"
       rel="stylesheet"
+      media="print"
+      onload="this.media='all'"
     />
+    <noscript>
+      <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@500;600;700&family=Lato:wght@400;700&display=swap" rel="stylesheet" />
+    </noscript>
   </head>
   <body>
     <div id="root"></div>
