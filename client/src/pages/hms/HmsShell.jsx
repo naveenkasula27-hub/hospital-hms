@@ -1,33 +1,38 @@
-import { createContext, useContext, useEffect, useState } from "react";
+import { createContext, lazy, Suspense, useContext, useEffect, useState } from "react";
 import { NavLink, Navigate, Route, Routes, useLocation } from "react-router-dom";
 import Icon from "../../components/hms/Icon.jsx";
 import { initials, ROLE_LABEL } from "../../lib/hms.js";
 import { prettyDate, todayForLab } from "../../lib/api.js";
+// Every section below is its own chunk: the first thing staff open (usually
+// Overview or Appointments) is all that downloads at sign-in — Billing,
+// Pharmacy, IPD and the rest only load the moment someone actually clicks
+// into them, instead of all twenty pages shipping together on every visit.
 import Overview from "./Overview.jsx";
-import Appointments from "./Appointments.jsx";
-import Consultation from "./Consultation.jsx";
-import Patients from "./Patients.jsx";
-import PatientProfile from "./PatientProfile.jsx";
-import Doctors from "./Doctors.jsx";
-import Billing from "./Billing.jsx";
-import BillNew from "./BillNew.jsx";
-import BillView from "./BillView.jsx";
-import Charges from "./Charges.jsx";
-import Pharmacy from "./Pharmacy.jsx";
-import PharmacySale from "./PharmacySale.jsx";
-import PharmacyReceive from "./PharmacyReceive.jsx";
-import { PharmacyPurchases, PharmacySales } from "./PharmacyLists.jsx";
-import Insurance from "./Insurance.jsx";
-import ClaimNew from "./ClaimNew.jsx";
-import ClaimView from "./ClaimView.jsx";
-import BedMap from "./BedMap.jsx";
-import Admissions from "./Admissions.jsx";
-import AdmitPatient from "./AdmitPatient.jsx";
-import AdmissionView from "./AdmissionView.jsx";
-import Wards from "./Wards.jsx";
-import BookingsPage from "../BookingsPage.jsx";
-import PricesPage from "../PricesPage.jsx";
-import SettingsPage from "../SettingsPage.jsx";
+const Appointments = lazy(() => import("./Appointments.jsx"));
+const Consultation = lazy(() => import("./Consultation.jsx"));
+const Patients = lazy(() => import("./Patients.jsx"));
+const PatientProfile = lazy(() => import("./PatientProfile.jsx"));
+const Doctors = lazy(() => import("./Doctors.jsx"));
+const Billing = lazy(() => import("./Billing.jsx"));
+const BillNew = lazy(() => import("./BillNew.jsx"));
+const BillView = lazy(() => import("./BillView.jsx"));
+const Charges = lazy(() => import("./Charges.jsx"));
+const Pharmacy = lazy(() => import("./Pharmacy.jsx"));
+const PharmacySale = lazy(() => import("./PharmacySale.jsx"));
+const PharmacyReceive = lazy(() => import("./PharmacyReceive.jsx"));
+const PharmacyPurchases = lazy(() => import("./PharmacyLists.jsx").then((m) => ({ default: m.PharmacyPurchases })));
+const PharmacySales = lazy(() => import("./PharmacyLists.jsx").then((m) => ({ default: m.PharmacySales })));
+const Insurance = lazy(() => import("./Insurance.jsx"));
+const ClaimNew = lazy(() => import("./ClaimNew.jsx"));
+const ClaimView = lazy(() => import("./ClaimView.jsx"));
+const BedMap = lazy(() => import("./BedMap.jsx"));
+const Admissions = lazy(() => import("./Admissions.jsx"));
+const AdmitPatient = lazy(() => import("./AdmitPatient.jsx"));
+const AdmissionView = lazy(() => import("./AdmissionView.jsx"));
+const Wards = lazy(() => import("./Wards.jsx"));
+const BookingsPage = lazy(() => import("../BookingsPage.jsx"));
+const PricesPage = lazy(() => import("../PricesPage.jsx"));
+const SettingsPage = lazy(() => import("../SettingsPage.jsx"));
 import PasswordForm from "../../components/PasswordForm.jsx";
 
 const ShellContext = createContext(null);
@@ -159,6 +164,7 @@ export default function HmsShell({ session, setSession, onSignOut }) {
           )}
 
           <main className="page">
+            <Suspense fallback={<p className="muted">Loading…</p>}>
             <Routes>
               <Route index element={guard(["owner", "reception"], <Overview />)} />
               <Route path="appointments" element={guard(["owner", "reception", "doctor"], <Appointments />)} />
@@ -195,6 +201,7 @@ export default function HmsShell({ session, setSession, onSignOut }) {
               } />
               <Route path="*" element={<Navigate to={HOME[role] || "/dashboard/settings"} replace />} />
             </Routes>
+            </Suspense>
           </main>
         </div>
       </div>

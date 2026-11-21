@@ -125,7 +125,26 @@
 .chart-day { font-size: 0.75rem; color: var(--ink-faint); }
 
 /* ---------- Tables ---------- */
-.table-wrap { overflow-x: auto; }
+/* On a narrow screen these tables scroll sideways rather than reflow, but
+   plain overflow:auto gives no hint that there's more to the right —
+   someone on a phone just sees the last column cut off and assumes it's
+   broken. The matched gradient/shadow pair below only shows a shadow on
+   whichever edge still has unscrolled content, and fades out once you reach
+   that edge — a swipeable table, visibly so. */
+.table-wrap {
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+  background:
+    linear-gradient(to right, #fff 30%, rgba(255, 255, 255, 0)),
+    linear-gradient(to left, #fff 30%, rgba(255, 255, 255, 0)) 100% 0,
+    radial-gradient(farthest-side at 0 50%, rgba(16, 36, 48, 0.18), rgba(16, 36, 48, 0)),
+    radial-gradient(farthest-side at 100% 50%, rgba(16, 36, 48, 0.18), rgba(16, 36, 48, 0)) 100% 0;
+  background-repeat: no-repeat;
+  background-color: #fff;
+  background-size: 32px 100%, 32px 100%, 12px 100%, 12px 100%;
+  background-position: 0 0, 100% 0, 0 0, 100% 0;
+  background-attachment: local, local, scroll, scroll;
+}
 .table { width: 100%; border-collapse: collapse; font-size: 0.9rem; }
 .table th {
   text-align: left; font-weight: 700; font-size: 0.75rem; letter-spacing: 0.04em; text-transform: uppercase;

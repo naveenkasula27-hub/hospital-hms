@@ -1,13 +1,16 @@
-import { useEffect, useState } from "react";
+import { lazy, Suspense, useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { me, clearToken, getToken } from "../lib/dash.js";
-import BookingsPage from "./BookingsPage.jsx";
-import PricesPage from "./PricesPage.jsx";
-import SettingsPage from "./SettingsPage.jsx";
-import AdminPage from "./AdminPage.jsx";
+// A plain lab dashboard (Bookings/Prices/Settings tabs) and a hospital's
+// HmsShell are mutually exclusive per sign-in — kind decides which one below
+// — so neither's weight should load for the other's users.
+const BookingsPage = lazy(() => import("./BookingsPage.jsx"));
+const PricesPage = lazy(() => import("./PricesPage.jsx"));
+const SettingsPage = lazy(() => import("./SettingsPage.jsx"));
+const AdminPage = lazy(() => import("./AdminPage.jsx"));
+const HmsShell = lazy(() => import("./hms/HmsShell.jsx"));
 import PasswordForm from "../components/PasswordForm.jsx";
 import LoginPage from "./LoginPage.jsx";
-import HmsShell from "./hms/HmsShell.jsx";
 
 const TABS = [
   { key: "bookings", label: "Bookings" },
@@ -60,7 +63,11 @@ export default function DashboardPage() {
   }
 
   if (session.lab?.kind === "hospital") {
-    return <HmsShell session={session} setSession={setSession} onSignOut={signOut} />;
+    return (
+      <Suspense fallback={<main className="center"><p className="muted">Loading…</p></main>}>
+        <HmsShell session={session} setSession={setSession} onSignOut={signOut} />
+      </Suspense>
+    );
   }
 
   const lab = session.lab;
@@ -118,10 +125,12 @@ export default function DashboardPage() {
             running without interruption.
           </div>
         )}
-        {isAdmin && <AdminPage />}
-        {!isAdmin && tab === "bookings" && <BookingsPage lab={lab} />}
-        {!isAdmin && tab === "prices" && <PricesPage lab={lab} />}
-        {!isAdmin && tab === "settings" && <SettingsPage lab={lab} onSaved={(l) => setSession((s) => ({ ...s, lab: { ...s.lab, ...l } }))} />}
+        <Suspense fallback={<p className="muted">Loading…</p>}>
+          {isAdmin && <AdminPage />}
+          {!isAdmin && tab === "bookings" && <BookingsPage lab={lab} />}
+          {!isAdmin && tab === "prices" && <PricesPage lab={lab} />}
+          {!isAdmin && tab === "settings" && <SettingsPage lab={lab} onSaved={(l) => setSession((s) => ({ ...s, lab: { ...s.lab, ...l } }))} />}
+        </Suspense>
         {!isAdmin && tab === "settings" && <PasswordForm />}
       </main>
     </>
