@@ -372,7 +372,7 @@ function BookingPageInner() {
     const timer = setTimeout(() => {
       sessionStorage.setItem(key, "1");
       setCallbackOpen(true);
-    }, 8000);
+    }, 1200);
     return () => clearTimeout(timer);
   }, [view, slug]);
 
