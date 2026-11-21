@@ -5,7 +5,7 @@
 .lb-services .lb-section-heading h2,.lb-services .lb-how h2 { font-size: clamp(1.5rem, 2.5vw, 2rem); letter-spacing: -.035em; }
 .lb-service-grid { display: grid; grid-template-columns: repeat(4,minmax(0,1fr)); gap: 16px; margin-top: 26px; }
 .lb-doctors { margin: 44px 0; }
-.lb-doctor-lane { list-style: none; display: flex; gap: 16px; margin: 22px 0 0; padding: 4px 2px 14px; overflow-x: auto; scroll-snap-type: x proximity; scrollbar-width: thin; cursor: grab; touch-action: pan-y; }
+.lb-doctor-lane { list-style: none; display: flex; gap: 16px; margin: 22px 0 0; padding: 4px 2px 14px; overflow-x: auto; scrollbar-width: thin; cursor: grab; touch-action: pan-y; }
 .lb-doctor-lane:active { cursor: grabbing; }
 .lb-doctor-lane * { user-select: none; }
 .lb-doctor-card { scroll-snap-align: start; flex: 0 0 220px; display: flex; flex-direction: column; background: #fff; border: 1px solid #e3ecec; border-radius: 16px; padding: 22px 20px; }
@@ -80,7 +80,7 @@
 .lb-fever-heading > p { font-size: .9rem; color: #466675; margin: 0; }
 .lb-lane-controls { display: flex; gap: 6px; flex: none; }
 .lb-lane-controls button { border: 1px solid #c4d7dd; background: #fff; color: #254e5e; border-radius: 20px; min-height: 38px; padding: 6px 12px; cursor: pointer; font: 700 .75rem var(--font-body); }
-.lb-fever-lane { list-style: none; margin: 0; padding: 3px 2px 14px; display: grid; grid-auto-flow: column; grid-auto-columns: minmax(270px,48%); gap: 18px; overflow-x: auto; scroll-snap-type: x proximity; scrollbar-width: thin; cursor: grab; touch-action: pan-y; }
+.lb-fever-lane { list-style: none; margin: 0; padding: 3px 2px 14px; display: grid; grid-auto-flow: column; grid-auto-columns: minmax(270px,48%); gap: 18px; overflow-x: auto; scrollbar-width: thin; cursor: grab; touch-action: pan-y; }
 .lb-fever-lane:active { cursor: grabbing; }
 .lb-fever-lane * { user-select: none; }
 .lb-fever-card { border: 1px solid #d4e1e5; border-radius: 20px; background: linear-gradient(135deg,#fff,#fffcf3); padding: 24px 20px 16px; display: flex; flex-direction: column; scroll-snap-align: start; }

@@ -113,52 +113,34 @@ function FeverSpotlight({ tests, lab, slug, lang, picked, onToggle, onBook }) {
   const dragStart = useDragScroll(lane, setInteracting);
   const fever = tests.filter((test) => test.category === "Fever");
 
+  // A fixed pixel step on a plain interval, instead of a requestAnimationFrame
+  // loop computing its own step from elapsed time. The time-based version
+  // could end up computing a near-zero step every tick under certain
+  // scheduling conditions and then look permanently stuck even though it was
+  // technically still "running" — a fixed step can't fail that way: every
+  // tick that fires moves the lane by the same visible amount, or it doesn't
+  // fire at all (paused/hidden), never something silently in between.
   useEffect(() => {
-    // This only auto-advances a demo content lane with its own visible Pause
-    // button right next to it — not a flashy page-load animation — so it
-    // runs regardless of the OS "reduce motion" preference. Gating it behind
-    // that setting meant the whole carousel silently never moved at all on
-    // any machine with animations turned off system-wide, which is common
-    // on lower-power Windows machines, and looked exactly like a bug.
     if (paused || interacting || fever.length < 2) return;
     const el = lane.current;
     if (!el) return;
-    let frame;
-    let previous;
     let atEnd = 0;
-    let visible = true;
-    const observer = new IntersectionObserver(([entry]) => {
-      visible = entry.isIntersecting;
-    });
-    observer.observe(el);
-    const tick = (time) => {
-      const delta = previous === undefined ? 0 : Math.min(time - previous, 50);
-      previous = time;
-      // Reading scrollLeft each frame (rather than tracking our own position)
-      // means a visitor's own swipe or an arrow press is never fought or
-      // undone — we just carry on from wherever the lane actually sits.
-      if (visible && !document.hidden) {
-        const maximum = el.scrollWidth - el.clientWidth;
-        if (maximum > 1) {
-          if (el.scrollLeft >= maximum - 1) {
-            atEnd += delta;
-            if (atEnd >= 2000) {
-              tweenScroll(el, 0, 700);
-              atEnd = 0;
-            }
-          } else {
-            atEnd = 0;
-            el.scrollLeft = Math.min(maximum, el.scrollLeft + delta * 0.22);
-          }
+    const id = setInterval(() => {
+      if (document.hidden) return;
+      const maximum = el.scrollWidth - el.clientWidth;
+      if (maximum <= 1) return;
+      if (el.scrollLeft >= maximum - 1) {
+        atEnd += 30;
+        if (atEnd >= 2000) {
+          tweenScroll(el, 0, 700);
+          atEnd = 0;
         }
+      } else {
+        atEnd = 0;
+        el.scrollLeft += 3;
       }
-      frame = requestAnimationFrame(tick);
-    };
-    frame = requestAnimationFrame(tick);
-    return () => {
-      cancelAnimationFrame(frame);
-      observer.disconnect();
-    };
+    }, 30);
+    return () => clearInterval(id);
   }, [paused, interacting, fever.length]);
 
   if (!fever.length) return null;
@@ -246,45 +228,29 @@ function DoctorsCarousel({ doctors, lab, slug, lang }) {
   const [interacting, setInteracting] = useState(false);
   const dragStart = useDragScroll(lane, setInteracting);
 
+  // See the matching note on FeverSpotlight's effect — same fixed-step
+  // interval, for the same reason.
   useEffect(() => {
-    // See the matching note on FeverSpotlight's effect — same reasoning for
-    // not gating this behind prefers-reduced-motion.
     if (paused || interacting || doctors.length < 2) return;
     const el = lane.current;
     if (!el) return;
-    let frame;
-    let previous;
     let atEnd = 0;
-    let visible = true;
-    const observer = new IntersectionObserver(([entry]) => {
-      visible = entry.isIntersecting;
-    });
-    observer.observe(el);
-    const tick = (time) => {
-      const delta = previous === undefined ? 0 : Math.min(time - previous, 50);
-      previous = time;
-      if (visible && !document.hidden) {
-        const maximum = el.scrollWidth - el.clientWidth;
-        if (maximum > 1) {
-          if (el.scrollLeft >= maximum - 1) {
-            atEnd += delta;
-            if (atEnd >= 2000) {
-              tweenScroll(el, 0, 700);
-              atEnd = 0;
-            }
-          } else {
-            atEnd = 0;
-            el.scrollLeft = Math.min(maximum, el.scrollLeft + delta * 0.22);
-          }
+    const id = setInterval(() => {
+      if (document.hidden) return;
+      const maximum = el.scrollWidth - el.clientWidth;
+      if (maximum <= 1) return;
+      if (el.scrollLeft >= maximum - 1) {
+        atEnd += 30;
+        if (atEnd >= 2000) {
+          tweenScroll(el, 0, 700);
+          atEnd = 0;
         }
+      } else {
+        atEnd = 0;
+        el.scrollLeft += 3;
       }
-      frame = requestAnimationFrame(tick);
-    };
-    frame = requestAnimationFrame(tick);
-    return () => {
-      cancelAnimationFrame(frame);
-      observer.disconnect();
-    };
+    }, 30);
+    return () => clearInterval(id);
   }, [paused, interacting, doctors.length]);
 
   const move = (direction) => {
@@ -393,6 +359,22 @@ function BookingPageInner() {
     }
     if (!callbackOpen && dialog.open) dialog.close();
   }, [callbackOpen]);
+
+  // Pop the same dialog up on its own, like the reference site does, the
+  // first time a visitor lands on the homepage in a given browser tab —
+  // sessionStorage (not localStorage) so it asks again next visit rather
+  // than just once ever, but doesn't re-nag every time they click back to
+  // the homepage from tests/checkups/the appointment page during one visit.
+  useEffect(() => {
+    if (view !== "home") return;
+    const key = `lb-callback-auto-${slug}`;
+    if (sessionStorage.getItem(key)) return;
+    const timer = setTimeout(() => {
+      sessionStorage.setItem(key, "1");
+      setCallbackOpen(true);
+    }, 1200);
+    return () => clearTimeout(timer);
+  }, [view, slug]);
 
   // What the patient has picked
   const [picked, setPicked] = useState({ tests: new Set(), packages: new Set() });
