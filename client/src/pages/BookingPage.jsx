@@ -17,7 +17,6 @@ import BookingDialog from "../components/BookingDialog.jsx";
 import DemoStrip from "../components/DemoStrip.jsx";
 import LangToggle from "../components/LangToggle.jsx";
 import AudienceTiles from "../components/AudienceTiles.jsx";
-import aboutPhoto from "../assets/about/hospital-exterior.webp";
 import CareBenefits from "../components/CareBenefits.jsx";
 import BookingFAQ from "../components/BookingFAQ.jsx";
 import { initials } from "../lib/hms.js";
@@ -770,44 +769,6 @@ function BookingPageInner() {
         </div>
       </div>
 
-      {/* The lab's own description, when it has written one. The test and
-          package counts that used to sit here now lead the hero, so this
-          band no longer repeats them. The illustration always renders, even
-          with no "about" text written yet, so this section is never just an
-          empty gap on the page. */}
-      <section className="about-band">
-          <div className="wrap about-band-inner">
-            <div className="about-band-text">
-              <h2>{t.aboutHeading(lab.name)}</h2>
-              <p className="about-band-copy">
-                {lab.about || (te
-                  ? `${lab.name} రోగ నిర్ధారణ, డాక్టర్ సంప్రదింపులు, ఫార్మసీని ఒకే చోట అందిస్తుంది — మీ బుకింగ్, రిపోర్ట్ అంతా ఒకే రిఫరెన్స్‌తో.`
-                  : `${lab.name} brings diagnostics, doctor consultations and pharmacy together in one place — your booking, visit and report all tracked under one reference.`)}
-              </p>
-              <div className="about-band-actions">
-                {lab.whatsapp && (
-                  <a
-                    className="btn btn-primary"
-                    href={`https://wa.me/${lab.whatsapp}?text=${encodeURIComponent(
-                      `Hello ${lab.name}, I have a question.`
-                    )}`}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                  >
-                    {t.aboutChat}
-                  </a>
-                )}
-                <a className="btn btn-ghost" href={`tel:${lab.phone.replace(/\s/g, "")}`}>
-                  {t.aboutCall}
-                </a>
-              </div>
-            </div>
-            <div className="about-band-art">
-              <img className="about-band-photo" src={aboutPhoto} alt="" loading="lazy" />
-            </div>
-          </div>
-        </section>
-
       {/* "How we can help" — the real services this site offers, each going
           straight to the real thing, not a teaser for a page that doesn't
           exist. The doctor-appointment card only shows for a hospital, since
@@ -828,10 +789,6 @@ function BookingPageInner() {
           <Link to={`/${slug}/tests`}><span>{lab.kind === "hospital" ? "04" : "03"} / {lab.homeCollection ? (te ? "హోమ్ కలెక్షన్" : "HOME COLLECTION") : (te ? "బుకింగ్" : "BOOKING")}</span><h3>{lab.homeCollection ? (te ? "ఇంటికి దగ్గరగా సంరక్షణ" : "Care closer to home") : (te ? "మీ సందర్శనను ప్లాన్ చేయండి" : "Plan your visit")}</h3><p>{lab.homeCollection ? (te ? "అర్హత ఉన్న టెస్టులకు బుకింగ్ ఫారమ్‌లో హోమ్ కలెక్షన్ ఎంచుకోండి." : "Choose home collection in the booking form for eligible tests.") : (te ? "మీ వివరాలు, అందుబాటులోని తేదీ, సమయాన్ని ఎంచుకోండి." : "Fill in your details and pick an available date and time.")}</p><b>{lab.homeCollection ? (te ? "కలెక్షన్ ఎంచుకోండి →" : "Choose collection →") : (te ? "బుకింగ్‌కు వెళ్లండి →" : "Go to booking →")}</b></Link>
           <Link to={`/${slug}/check`}><span>{lab.kind === "hospital" ? "05" : "04"} / {te ? "మీ రిపోర్టులు" : "YOUR REPORTS"}</span><h3>{te ? "మీ బుకింగ్‌ను అనుసరించండి" : "Keep up with your booking"}</h3><p>{te ? "పురోగతి, విడుదలైన రిపోర్టులను చూడటానికి బుకింగ్ రిఫరెన్స్ వాడండి." : "Use your booking reference to check progress and released reports."}</p><b>{te ? "మీ బుకింగ్‌ను ట్రాక్ చేయండి →" : "Track your booking →"}</b></Link>
         </div>
-        <button type="button" className="lb-callback-prompt" onClick={() => setCallbackOpen(true)}>
-          <strong>{te ? "ఏది ఎంచుకోవాలో తెలియటం లేదా?" : "Not sure what you need?"}</strong>
-          <span>{te ? "మీ వివరాలు ఇవ్వండి, ల్యాబ్ బృందం మీకు సహాయం చేస్తుంది." : "Share your details and the team will call you back to help."}</span>
-        </button>
       </section>
 
       {/* What happens after a booking — the WhatsApp confirmations, reminders,
