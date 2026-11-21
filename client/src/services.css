@@ -28,7 +28,7 @@
 .lb-callback-dialog::backdrop { background: #102334a8; backdrop-filter: blur(3px); }
 .lb-request-fields { display: grid; grid-template-columns: 1fr 1fr; gap: 18px 20px; margin-top: 18px; }
 .lb-request-fields label { font-size: .84rem; font-weight: 700; color: #3e5b6b; display: block; }
-.lb-request-fields input { width: 100%; box-sizing: border-box; padding: 12px 13px; min-width: 0; border: 1px solid #cbd9e2; border-radius: 7px; background: #fff; color: #193b4d; font: 1rem var(--font-body, inherit); margin-top: 7px; min-height: 46px; }
+.lb-request-fields input, .lb-request-fields select { width: 100%; box-sizing: border-box; padding: 12px 13px; min-width: 0; border: 1px solid #cbd9e2; border-radius: 7px; background: #fff; color: #193b4d; font: 1rem var(--font-body, inherit); margin-top: 7px; min-height: 46px; }
 .lb-callback-message { display: block; margin-top: 18px; font-size: .84rem; font-weight: 700; color: #3e5b6b; }
 .lb-callback-message textarea { width: 100%; box-sizing: border-box; padding: 12px 13px; border: 1px solid #cbd9e2; border-radius: 7px; background: #fff; color: #193b4d; font: 1rem var(--font-body, inherit); margin-top: 7px; resize: vertical; }
 .lb-request-submit { cursor: pointer; width: 100%; border-radius: 999px; border: 1px solid #0d6881; background: #0d6881; color: #fff; font: 700 1rem var(--font-body, inherit); padding: 15px 20px; margin-top: 20px; box-shadow: 0 3px 0 #09485b; }

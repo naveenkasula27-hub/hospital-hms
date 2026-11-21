@@ -333,7 +333,7 @@ function BookingPageInner() {
   // box: no booking backend involved, it just hands the details to
   // WhatsApp so the lab's own team follows up.
   const [callbackOpen, setCallbackOpen] = useState(false);
-  const [callbackForm, setCallbackForm] = useState({ name: "", phone: "", email: "", message: "" });
+  const [callbackForm, setCallbackForm] = useState({ name: "", phone: "", email: "", preferredDate: "", preferredTime: "", message: "" });
   // The confirmation shown after submitting always has to be visible on its
   // own — opening WhatsApp or a tel: link is a bonus, not something this
   // screen can depend on. A tel: link does nothing at all on a desktop
@@ -1025,6 +1025,8 @@ function BookingPageInner() {
                   `Name: ${f.name}`,
                   `Phone: ${f.phone}`,
                   f.email ? `Email: ${f.email}` : "",
+                  f.preferredDate ? `Preferred date: ${f.preferredDate}` : "",
+                  f.preferredTime ? `Preferred time: ${f.preferredTime}` : "",
                   f.message ? `Message: ${f.message}` : "",
                 ].filter(Boolean);
                 // A real WhatsApp number gets a prefilled chat opened as a
@@ -1034,7 +1036,7 @@ function BookingPageInner() {
                   window.open(`https://wa.me/${lab.whatsapp}?text=${encodeURIComponent(lines.join("\n"))}`, "_blank", "noopener");
                 }
                 setCallbackSent(`CB-${Math.random().toString(36).slice(2, 8).toUpperCase()}`);
-                setCallbackForm({ name: "", phone: "", email: "", message: "" });
+                setCallbackForm({ name: "", phone: "", email: "", preferredDate: "", preferredTime: "", message: "" });
               }}
             >
               <div className="lb-request-fields">
@@ -1044,8 +1046,19 @@ function BookingPageInner() {
                 <label htmlFor="cb-phone">{copy.phone}
                   <input id="cb-phone" type="tel" required minLength={6} maxLength={30} value={callbackForm.phone} onChange={(e) => setCallbackForm((f) => ({ ...f, phone: e.target.value }))} />
                 </label>
-                <label className="lb-callback-wide" htmlFor="cb-email">{te ? "ఇమెయిల్ (ఐచ్ఛికం)" : "Email (optional)"}
+                <label htmlFor="cb-email">{te ? "ఇమెయిల్ (ఐచ్ఛికం)" : "Email (optional)"}
                   <input id="cb-email" type="email" maxLength={160} value={callbackForm.email} onChange={(e) => setCallbackForm((f) => ({ ...f, email: e.target.value }))} />
+                </label>
+                <label htmlFor="cb-date">{te ? "అనుకూలమైన తేదీ" : "Preferred date"}
+                  <input id="cb-date" type="date" min={todayForLab(lab)} value={callbackForm.preferredDate} onChange={(e) => setCallbackForm((f) => ({ ...f, preferredDate: e.target.value }))} />
+                </label>
+                <label className="lb-callback-wide" htmlFor="cb-time">{te ? "అనుకూలమైన సమయం" : "Preferred time period"}
+                  <select id="cb-time" value={callbackForm.preferredTime} onChange={(e) => setCallbackForm((f) => ({ ...f, preferredTime: e.target.value }))}>
+                    <option value="">{te ? "సమయాన్ని ఎంచుకోండి" : "Choose a preferred time"}</option>
+                    <option value="morning">{te ? "ఉదయం" : "Morning"}</option>
+                    <option value="afternoon">{te ? "మధ్యాహ్నం" : "Afternoon"}</option>
+                    <option value="evening">{te ? "సాయంత్రం" : "Evening"}</option>
+                  </select>
                 </label>
               </div>
               <details className="lb-callback-note">
