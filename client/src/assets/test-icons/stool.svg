@@ -1,0 +1,23 @@
+<svg width="200" height="200" viewBox="0 0 200 200" xmlns="http://www.w3.org/2000/svg">
+  <circle cx="100" cy="100" r="92" fill="#f3f7f6"/>
+
+  <!-- Specimen cup, lid on, nothing visible inside -->
+  <path d="M68 92h64l-7 62a10 10 0 0 1-10 9H85a10 10 0 0 1-10-9l-7-62Z" fill="#ffffff" stroke="#8aa0a8" stroke-width="3"/>
+  <path d="M74 92h52" stroke="#cfd9dc" stroke-width="3" stroke-linecap="round"/>
+  <rect x="62" y="76" width="76" height="20" rx="8" fill="#d64545"/>
+  <rect x="70" y="70" width="60" height="10" rx="5" fill="#b93838"/>
+
+  <!-- Collection spoon resting beside the cup -->
+  <g transform="rotate(18 50 150)">
+    <rect x="46" y="118" width="7" height="46" rx="3.5" fill="#c3cdd1"/>
+    <ellipse cx="49.5" cy="112" rx="13" ry="9" fill="#dfe6e8" stroke="#aebcc1" stroke-width="2.5"/>
+  </g>
+
+  <!-- Lab slip -->
+  <g transform="translate(118,118) rotate(-8)">
+    <rect width="40" height="52" rx="5" fill="#ffffff" stroke="#8aa0a8" stroke-width="2.5"/>
+    <line x1="8" y1="14" x2="32" y2="14" stroke="#c3cdd1" stroke-width="3" stroke-linecap="round"/>
+    <line x1="8" y1="24" x2="32" y2="24" stroke="#c3cdd1" stroke-width="3" stroke-linecap="round"/>
+    <line x1="8" y1="34" x2="22" y2="34" stroke="#c3cdd1" stroke-width="3" stroke-linecap="round"/>
+  </g>
+</svg>

@@ -70,15 +70,16 @@ function FeverSpotlight({ tests, lab, slug, lang, picked, onToggle, onBook }) {
   const lane = useRef(null);
   const [paused, setPaused] = useState(false);
   const [interacting, setInteracting] = useState(false);
-  // Someone running their system on "reduce motion" gets a still carousel,
-  // which is the right default — but pressing Play is them asking for it
-  // anyway, so that choice overrides the system preference.
-  const [forcePlay, setForcePlay] = useState(false);
   const fever = tests.filter((test) => test.category === "Fever");
 
   useEffect(() => {
-    const motion = window.matchMedia("(prefers-reduced-motion: reduce)");
-    if (paused || interacting || fever.length < 2 || (motion.matches && !forcePlay)) return;
+    // This only auto-advances a demo content lane with its own visible Pause
+    // button right next to it — not a flashy page-load animation — so it
+    // runs regardless of the OS "reduce motion" preference. Gating it behind
+    // that setting meant the whole carousel silently never moved at all on
+    // any machine with animations turned off system-wide, which is common
+    // on lower-power Windows machines, and looked exactly like a bug.
+    if (paused || interacting || fever.length < 2) return;
     const el = lane.current;
     if (!el) return;
     let frame;
@@ -95,7 +96,7 @@ function FeverSpotlight({ tests, lab, slug, lang, picked, onToggle, onBook }) {
       // Reading scrollLeft each frame (rather than tracking our own position)
       // means a visitor's own swipe or an arrow press is never fought or
       // undone — we just carry on from wherever the lane actually sits.
-      if (visible && !document.hidden && (!motion.matches || forcePlay)) {
+      if (visible && !document.hidden) {
         const maximum = el.scrollWidth - el.clientWidth;
         if (maximum > 1) {
           if (el.scrollLeft >= maximum - 1) {
@@ -117,7 +118,7 @@ function FeverSpotlight({ tests, lab, slug, lang, picked, onToggle, onBook }) {
       cancelAnimationFrame(frame);
       observer.disconnect();
     };
-  }, [paused, interacting, forcePlay, fever.length]);
+  }, [paused, interacting, fever.length]);
 
   if (!fever.length) return null;
 
@@ -148,7 +149,7 @@ function FeverSpotlight({ tests, lab, slug, lang, picked, onToggle, onBook }) {
             <button type="button" aria-label="Previous fever tests" onClick={() => move(-1)}>←</button>
             <button
               type="button"
-              onClick={() => { if (paused) setForcePlay(true); setPaused(!paused); }}
+              onClick={() => setPaused(!paused)}
               aria-pressed={paused}
             >
               {paused ? (te ? "ప్లే" : "Play") : (te ? "పాజ్" : "Pause")}
@@ -201,11 +202,11 @@ function DoctorsCarousel({ doctors, lab, slug, lang }) {
   const lane = useRef(null);
   const [paused, setPaused] = useState(false);
   const [interacting, setInteracting] = useState(false);
-  const [forcePlay, setForcePlay] = useState(false);
 
   useEffect(() => {
-    const motion = window.matchMedia("(prefers-reduced-motion: reduce)");
-    if (paused || interacting || doctors.length < 2 || (motion.matches && !forcePlay)) return;
+    // See the matching note on FeverSpotlight's effect — same reasoning for
+    // not gating this behind prefers-reduced-motion.
+    if (paused || interacting || doctors.length < 2) return;
     const el = lane.current;
     if (!el) return;
     let frame;
@@ -219,7 +220,7 @@ function DoctorsCarousel({ doctors, lab, slug, lang }) {
     const tick = (time) => {
       const delta = previous === undefined ? 0 : Math.min(time - previous, 50);
       previous = time;
-      if (visible && !document.hidden && (!motion.matches || forcePlay)) {
+      if (visible && !document.hidden) {
         const maximum = el.scrollWidth - el.clientWidth;
         if (maximum > 1) {
           if (el.scrollLeft >= maximum - 1) {
@@ -241,7 +242,7 @@ function DoctorsCarousel({ doctors, lab, slug, lang }) {
       cancelAnimationFrame(frame);
       observer.disconnect();
     };
-  }, [paused, interacting, forcePlay, doctors.length]);
+  }, [paused, interacting, doctors.length]);
 
   const move = (direction) => {
     const el = lane.current;
@@ -264,7 +265,7 @@ function DoctorsCarousel({ doctors, lab, slug, lang }) {
           <button type="button" aria-label="Previous doctors" onClick={() => move(-1)}>←</button>
           <button
             type="button"
-            onClick={() => { if (paused) setForcePlay(true); setPaused(!paused); }}
+            onClick={() => setPaused(!paused)}
             aria-pressed={paused}
           >
             {paused ? (te ? "ప్లే" : "Play") : (te ? "పాజ్" : "Pause")}

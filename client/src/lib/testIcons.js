@@ -20,7 +20,7 @@ import scans from "../assets/test-icons/scans.png";
 import allergy from "../assets/test-icons/allergy.png";
 import clotting from "../assets/test-icons/clotting.png";
 import markers from "../assets/test-icons/markers.png";
-import stool from "../assets/test-icons/stool.png";
+import stool from "../assets/test-icons/stool.svg";
 import urine from "../assets/test-icons/urine.png";
 
 const TEST_ICONS = {
