@@ -3,4 +3,4 @@ Allow: /
 Disallow: /dashboard
 Disallow: /print
 
-Sitemap: https://REPLACE-WITH-YOUR-DOMAIN.vercel.app/sitemap.xml
+Sitemap: https://np-hospital-web.vercel.app/sitemap.xml
